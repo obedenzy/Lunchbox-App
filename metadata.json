@@ -1,0 +1,5 @@
+{
+  "name": "BentoMagic - Lunchbox Idea Generator",
+  "description": "A clever weekly lunchbox planner that generates age-appropriate, allergy-safe meal ideas with printable cards for kids.",
+  "requestFramePermissions": []
+}

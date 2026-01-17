@@ -28,31 +28,48 @@ export const LunchCard: React.FC<LunchCardProps> = ({ day, data }) => {
 
   return (
     <div className="bg-white rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl shadow-navy/5 border-2 border-navy/5 flex flex-col print-break-inside-avoid transition-all hover:shadow-primary/10 hover:border-primary/20 duration-500 group relative text-left">
-      <div className="bg-navy p-8 md:p-14 text-white transition-colors group-hover:bg-navy/95 duration-500 flex flex-col sm:flex-row sm:items-center justify-between gap-6 md:gap-8">
-        <div>
-          <span className="text-[10px] font-black tracking-widest text-primary block mb-3 md:mb-4">{day} Menu</span>
-          <h3 className="text-2xl md:text-5xl font-black tracking-tight leading-[1.1] md:leading-[0.9]" title={data.name}>{data.name}</h3>
+      {/* Meal Image at the Top */}
+      {data.imageUrl && (
+        <div className="w-full h-64 md:h-[450px] overflow-hidden relative">
+          <img 
+            src={data.imageUrl} 
+            alt={data.name} 
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+            loading="lazy"
+          />
+          {/* Subtle overlay to ensure top-section content pops if needed */}
+          <div className="absolute inset-0 bg-gradient-to-t from-navy/40 to-transparent" />
         </div>
-        <div className="flex items-center gap-6 bg-white/5 px-6 md:px-8 py-4 md:py-5 rounded-2xl md:rounded-3xl backdrop-blur-xl border-2 border-white/10 shadow-2xl">
-           <div className="text-right">
-             <p className="text-[10px] font-black text-secondary tracking-widest mb-1">Energy Profile</p>
-             <p className="text-2xl md:text-3xl font-black tracking-tight">{macros.calories} <span className="text-sm text-white/40">kcal</span></p>
-           </div>
+      )}
+
+      {/* Header Info - Blended with navy background */}
+      <div className="bg-navy p-8 md:p-12 text-white transition-colors group-hover:bg-navy/95 duration-500">
+        <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-center justify-between">
+          <div className="flex-1 space-y-4">
+            <span className="text-[10px] font-black tracking-widest text-primary block uppercase">{day} Menu</span>
+            <h3 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">{data.name}</h3>
+            <div className="flex items-center gap-4 bg-white/10 px-6 py-3 rounded-2xl border border-white/10 w-fit">
+               <div className="text-left">
+                 <p className="text-[10px] font-black text-secondary tracking-widest uppercase">Target Fuel</p>
+                 <p className="text-2xl font-black tracking-tight">{macros.calories} <span className="text-sm text-white/40">kcal</span></p>
+               </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="p-8 md:p-16 grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-16 lg:gap-20">
+      <div className="p-8 md:p-12 lg:p-16 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
         <div className="lg:col-span-4 space-y-8 md:space-y-12">
-          <div className="flex flex-col items-center sm:flex-row gap-8 md:gap-10 lg:flex-col lg:items-start xl:flex-row xl:items-center">
-            <div className="relative w-28 h-28 md:w-32 md:h-32 rounded-[2rem] md:rounded-[2.5rem] flex-shrink-0 shadow-2xl border-4 md:border-8 border-bg-cool group-hover:scale-110 transition-transform duration-700" style={chartStyle}>
-              <div className="absolute inset-6 md:inset-8 bg-white rounded-xl md:rounded-2xl flex flex-col items-center justify-center shadow-inner">
-                 <span className="text-[8px] md:text-[10px] font-black text-navy/20 tracking-widest uppercase">Fuel</span>
+          <div className="flex flex-col sm:flex-row lg:flex-col gap-8 items-center sm:items-start">
+            <div className="relative w-32 h-32 rounded-[2.5rem] flex-shrink-0 shadow-2xl border-8 border-bg-cool group-hover:scale-105 transition-transform duration-500" style={chartStyle}>
+              <div className="absolute inset-8 bg-white rounded-2xl flex items-center justify-center shadow-inner">
+                 <span className="text-[10px] font-black text-navy/20 tracking-widest uppercase">Mix</span>
               </div>
             </div>
             
-            <div className="flex-1 w-full space-y-4 md:space-y-5">
-              <h4 className="text-[10px] font-black text-navy/30 tracking-widest uppercase mb-2 md:mb-4">Macro Balance</h4>
-              <div className="space-y-2 md:space-y-3">
+            <div className="flex-1 w-full space-y-4">
+              <h4 className="text-[10px] font-black text-navy/30 tracking-widest uppercase mb-2">Macro Breakdown</h4>
+              <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs font-black text-navy tracking-wide">
                   <span className="flex items-center gap-3"><div className="w-3 h-3 rounded-md bg-primary" /> Protein</span>
                   <span className="text-navy/40">{pPct}%</span>
@@ -69,47 +86,51 @@ export const LunchCard: React.FC<LunchCardProps> = ({ day, data }) => {
             </div>
           </div>
 
-          <div className="bg-bg-cool p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border-2 border-white shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 text-4xl opacity-10">★</div>
-            <p className="text-[10px] font-black text-primary tracking-widest uppercase mb-3 md:mb-4">Kid-Friendly Benefit</p>
-            <p className="text-base md:text-lg font-bold text-navy/70 leading-relaxed">{data.kidBenefit}</p>
+          <div className="bg-bg-cool p-8 rounded-[2rem] border-2 border-white shadow-xl relative overflow-hidden group/benefit">
+            <div className="absolute top-0 right-0 p-4 text-4xl opacity-5 group-hover/benefit:scale-125 transition-transform">🍏</div>
+            <p className="text-[10px] font-black text-primary tracking-widest uppercase mb-4">Parent Note</p>
+            <p className="text-lg font-bold text-navy/70 leading-relaxed italic">"{data.note}"</p>
           </div>
         </div>
 
-        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 lg:gap-20">
-          <div className="space-y-8 md:space-y-10">
-            <h4 className="text-[10px] font-black text-navy/30 tracking-widest uppercase mb-4 md:mb-8 border-b-4 border-bg-cool pb-4">Ingredients</h4>
-            <ul className="space-y-6 md:space-y-8">
+        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="space-y-8">
+            <h4 className="text-[10px] font-black text-navy/30 tracking-widest uppercase border-b-4 border-bg-cool pb-4">Inside the Box</h4>
+            <ul className="space-y-6">
               {data.ingredients.map((ing, i) => (
                 <li key={i} className="group/item relative pl-6">
-                  <div className="absolute left-0 top-1.5 w-2 h-2 rounded-full bg-primary" />
-                  <span className="text-base md:text-lg text-navy font-black leading-tight block group-hover/item:text-primary transition-colors mb-1 tracking-tight">{ing.name}</span>
-                  <span className="text-[10px] md:text-xs text-navy/40 font-bold leading-tight block tracking-wide">{ing.benefit}</span>
+                  <div className="absolute left-0 top-2 w-2 h-2 rounded-full bg-primary" />
+                  <span className="text-lg text-navy font-black leading-tight block group-hover/item:text-primary transition-colors mb-1">{ing.name}</span>
+                  <span className="text-xs text-navy/40 font-bold leading-tight block uppercase tracking-wide">{ing.benefit}</span>
                 </li>
               ))}
-              <li className="flex items-center gap-4 md:gap-5 p-4 md:p-6 bg-secondary text-white rounded-[1.25rem] md:rounded-2xl shadow-xl shadow-secondary/10 tracking-wide font-black text-sm">
-                <span className="text-2xl md:text-3xl">🍏</span>
-                <span>Snack: {data.snack}</span>
+              <li className="flex items-center gap-4 p-5 bg-secondary text-white rounded-2xl shadow-xl shadow-secondary/10 font-black text-sm">
+                <span className="text-3xl">🧺</span>
+                <span>Side: {data.snack}</span>
               </li>
             </ul>
           </div>
 
-          <div className="space-y-8 md:space-y-10">
-            <h4 className="text-[10px] font-black text-navy/30 tracking-widest uppercase mb-4 md:mb-8 border-b-4 border-bg-cool pb-4">Quick Steps</h4>
-            <div className="space-y-6 md:space-y-8">
+          <div className="space-y-8">
+            <h4 className="text-[10px] font-black text-navy/30 tracking-widest uppercase border-b-4 border-bg-cool pb-4">Preparation</h4>
+            <div className="space-y-8">
               {data.steps.map((step, i) => (
-                <div key={i} className="flex gap-4 md:gap-6 items-start">
-                  <span className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-accent text-navy flex items-center justify-center font-black text-xs shadow-xl shadow-accent/20">{i + 1}</span>
-                  <p className="text-base md:text-lg text-navy font-bold leading-relaxed pt-1">{step}</p>
+                <div key={i} className="flex gap-5 items-start">
+                  <span className="flex-shrink-0 w-10 h-10 rounded-2xl bg-accent text-navy flex items-center justify-center font-black text-xs shadow-lg">{i + 1}</span>
+                  <p className="text-lg text-navy font-bold leading-relaxed pt-1">{step}</p>
                 </div>
               ))}
+              <div className="p-6 bg-primary/5 rounded-2xl border border-primary/10">
+                <p className="text-[10px] font-black text-primary uppercase mb-2">Nutritional Edge</p>
+                <p className="text-sm font-medium text-navy/60 leading-relaxed">{data.nutritionSummary}</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
       
-      <div className="px-6 md:px-10 py-4 md:py-6 bg-navy text-white/40 border-t border-white/5 flex items-center justify-center text-center">
-        <p className="text-[10px] font-black tracking-widest uppercase">Note: {data.note}</p>
+      <div className="px-10 py-5 bg-navy text-white/40 border-t border-white/5 flex items-center justify-center text-center">
+        <p className="text-[10px] font-black tracking-widest uppercase">Kid's Benefit: {data.kidBenefit}</p>
       </div>
     </div>
   );

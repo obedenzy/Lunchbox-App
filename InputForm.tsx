@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Allergy, UserProfile } from '../types';
-import { CheckIcon } from './Icons';
+import { Allergy, UserProfile } from './types';
+import { CheckIcon } from './components/Icons';
 
 interface InputFormProps {
   onSubmit: (profile: UserProfile) => void;
@@ -70,7 +70,7 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading, initi
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-6 md:p-16 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-navy/5 border-4 border-navy/5">
+    <form onSubmit={handleSubmit} className="bg-white p-6 md:p-16 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-navy/5 border-4 border-navy/5 text-left">
       <div className="space-y-10 md:space-y-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
           <div>

@@ -13,8 +13,6 @@ ingredients:
 ${ingredientsText}
 Snack: ${snack}`;
 
-  console.log("Server generating image for:", mealName);
-
   try {
     const response = await fetch("https://api.runware.ai/v1", {
       method: "POST",
@@ -24,12 +22,12 @@ Snack: ${snack}`;
         {
           "taskType": "imageInference",
           "taskUUID": taskUUID,
-          "model": "runware:400@4",
+          "model": "runware:100@1",
           "positivePrompt": prompt,
           "width": 1024,
           "height": 1024,
           "numberResults": 1,
-          "steps": 30
+          "steps": 25
         }
       ]),
     });
@@ -49,23 +47,14 @@ Snack: ${snack}`;
 export async function POST(req: Request) {
   try {
     const profile: UserProfile = await req.json();
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY });
 
     const prompt = `Create a 7-day (Monday to Sunday) kid-friendly lunchbox plan for a ${profile.age} year old for the period: ${profile.targetWeek}.
     Restrictions: ${profile.allergies.join(', ') || 'None'}.
     Diet: ${profile.dietType}.
     Preferences: ${profile.preferences || 'None'}.
     
-    Return a JSON object with keys "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday".
-    Each day must have:
-    - "name": Catchy meal name.
-    - "ingredients": Array of objects, each with "name" (the food) and "benefit" (a short 3-5 word health benefit for this specific ingredient).
-    - "snack": One healthy side.
-    - "steps": 4-6 robust, detailed, and logical assembly steps for a busy parent.
-    - "nutritionSummary": Brief health benefit.
-    - "kidBenefit": "Why it's good for you" for a kid.
-    - "macros": Object with "calories", "protein", "carbs", "fat" (numbers).
-    - "note": Encouraging note (max 15 words).`;
+    Return a JSON object with keys "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday".`;
 
     const lunchDaySchema = {
       type: Type.OBJECT,
@@ -102,7 +91,7 @@ export async function POST(req: Request) {
     };
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-1.5-flash',
       contents: prompt,
       config: {
         responseMimeType: "application/json",

@@ -160,7 +160,11 @@ export default function App() {
         body: JSON.stringify(profile),
       });
 
-      if (!response.ok) throw new Error("Failed to generate plan on server.");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate plan on server.");
+      }
+      
       const rawPlan = await response.json();
 
       const generatedPlan: WeeklyPlan = {
@@ -282,6 +286,52 @@ export default function App() {
     </div>
   );
 
+  const renderPricing = () => (
+    <div className="max-w-6xl mx-auto space-y-24 px-4">
+      <div className="text-center space-y-6">
+        <h2 className="text-5xl md:text-7xl font-black text-navy tracking-tight">Fuel Your Planning</h2>
+        <p className="text-navy/40 font-bold max-w-xl mx-auto uppercase tracking-widest text-xs md:text-sm">BentoMagic uses advanced intelligence to design your meals. Credits are only consumed on successful generation.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+        {TOKEN_PACKS.map((pack) => (
+          <div 
+            key={pack.priceId} 
+            className={`bg-white p-12 rounded-[3rem] border-4 transition-all flex flex-col items-center text-center relative ${pack.popular ? 'border-primary shadow-2xl shadow-primary/20 scale-105 z-10' : 'border-navy/5 shadow-xl hover:border-primary/20'}`}
+          >
+            {pack.popular && (
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-primary text-white px-8 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-xl">Most Popular</div>
+            )}
+            <div className="text-6xl mb-8">{pack.icon}</div>
+            <h3 className="text-2xl font-black text-navy mb-2">{pack.label}</h3>
+            <p className="text-navy/40 font-black uppercase tracking-widest text-[10px] mb-8">{pack.tokens} Generation Credits</p>
+            <div className="text-5xl font-black text-navy mb-12 tracking-tighter">{pack.price}</div>
+            <button 
+              onClick={() => { setSelectedPack(pack); setView('payment'); }}
+              className={`w-full py-6 rounded-2xl font-black uppercase tracking-widest transition-all ${pack.popular ? 'bg-primary text-white shadow-2xl shadow-primary/30' : 'bg-navy text-white shadow-xl'}`}
+            >
+              Select Pack
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderPayment = () => {
+    if (!selectedPack) return null;
+    return (
+      <div className="max-w-4xl mx-auto px-4 animate-in zoom-in duration-500">
+        <StripeCheckout 
+          tokens={selectedPack.tokens}
+          amount={selectedPack.price}
+          label={selectedPack.label}
+          onCancel={() => { setSelectedPack(null); setView('pricing'); }}
+        />
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen flex flex-col selection:bg-primary/20 selection:text-primary-dark overflow-x-hidden bg-bg-cool">
       {toast && (
@@ -357,7 +407,9 @@ export default function App() {
 
       <main className="flex-1 pb-32">
         {view === 'home' && renderHome()}
-        {/* Simplified other views for space; they would typically be broken into separate page components or kept in state if small */}
+        {view === 'pricing' && renderPricing()}
+        {view === 'payment' && renderPayment()}
+        {/* Other views omitted for brevity, add as needed */}
       </main>
 
       <footer className="bg-navy py-24 md:py-40 no-print mt-auto text-white">
@@ -369,18 +421,6 @@ export default function App() {
             </div>
             <p className="text-white/30 font-bold leading-relaxed text-lg uppercase tracking-widest">Designing the future of family mealtime through intelligence.</p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-20 w-full lg:w-auto">
-            <div className="space-y-10">
-              <h4 className="font-black text-white/20 tracking-[0.3em] text-[10px] uppercase">Navigation</h4>
-              <ul className="space-y-6 text-xs font-black tracking-widest uppercase">
-                <li><button onClick={() => navigateTo('home')} className="hover:text-primary transition-colors">Home</button></li>
-                <li><button onClick={() => navigateTo('pricing')} className="hover:text-primary transition-colors">Pricing</button></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto px-10 border-t border-white/5 mt-32 pt-12 flex flex-col md:flex-row justify-between items-center gap-8">
-           <p className="text-white/10 text-[10px] font-black tracking-[0.3em] uppercase">© {new Date().getFullYear()} BentoMagic Intelligence Studio</p>
         </div>
       </footer>
     </div>

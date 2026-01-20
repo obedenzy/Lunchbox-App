@@ -1,7 +1,8 @@
+'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Allergy, UserProfile } from './types';
-import { CheckIcon } from './components/Icons';
+import { Allergy, UserProfile } from '../types';
+import { CheckIcon } from './Icons';
 
 interface InputFormProps {
   onSubmit: (profile: UserProfile) => void;

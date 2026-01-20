@@ -1,10 +1,11 @@
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { UserProfile, WeeklyPlan, User } from './types';
 import { generateLunchPlan } from './services/geminiService';
-import { InputForm } from './InputForm';
-import { LunchCard } from './LunchCard';
-import { AuthForm } from './AuthForm';
+import { InputForm } from './components/InputForm';
+import { LunchCard } from './components/LunchCard';
+import { AuthForm } from './components/AuthForm';
 import { AppleIcon, PrintIcon, UserIcon, CreditCardIcon, LoadingIcon, CheckIcon } from './components/Icons';
 
 type View = 'home' | 'history' | 'profile' | 'pricing' | 'payment' | 'nutrition' | 'contact';
@@ -577,7 +578,6 @@ function App() {
         </div>
       )}
 
-      {/* Navigation */}
       <nav className="sticky top-0 z-[100] bg-white/95 backdrop-blur-3xl border-b-4 border-navy/5 no-print">
         <div className="max-w-7xl mx-auto px-6 md:px-10 h-24 flex items-center justify-between">
           <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigateTo('home')}>
@@ -587,10 +587,8 @@ function App() {
             <span className="text-2xl md:text-3xl font-black text-navy tracking-tighter">BentoMagic</span>
           </div>
           
-          {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-12">
             <div className="flex items-center gap-10 text-[10px] font-black tracking-[0.2em] text-navy/40 uppercase">
-              {/* Requirement: change studio to home, credit to pricing, library to history */}
               <button onClick={() => navigateTo('home')} className={`hover:text-primary transition-all ${view === 'home' ? 'text-primary scale-110' : ''}`}>Home</button>
               <button onClick={() => navigateTo('pricing')} className={`hover:text-primary transition-all ${view === 'pricing' ? 'text-primary scale-110' : ''}`}>Pricing</button>
               {user && (
@@ -614,7 +612,6 @@ function App() {
             )}
           </div>
 
-          {/* Mobile Menu Toggle */}
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="lg:hidden p-3 text-navy hover:text-primary transition-all focus:outline-none" aria-label="Toggle Menu">
             {isMenuOpen ? (
               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="4"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -624,7 +621,6 @@ function App() {
           </button>
         </div>
 
-        {/* Mobile Menu Overlay */}
         <div className={`lg:hidden fixed inset-0 top-24 w-full h-[calc(100vh-6rem)] bg-white/98 backdrop-blur-xl transition-all duration-500 z-[150] overflow-y-auto ${isMenuOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full pointer-events-none'}`}>
           <div className="p-8 space-y-10 pb-40">
             <div className="flex flex-col gap-8">
@@ -645,7 +641,6 @@ function App() {
               )}
 
               <div className="grid grid-cols-1 gap-4">
-                {/* Requirement: change studio to home, credit to pricing, library to history */}
                 <button onClick={() => navigateTo('home')} className={`w-full p-6 rounded-3xl text-sm font-black tracking-[0.2em] text-left flex items-center justify-between uppercase ${view === 'home' ? 'bg-primary text-white shadow-2xl shadow-primary/30' : 'bg-bg-cool text-navy'}`}>
                   Home {view === 'home' && <CheckIcon />}
                 </button>
@@ -731,13 +726,6 @@ function App() {
               <span className="text-4xl font-black tracking-tighter">BentoMagic</span>
             </div>
             <p className="text-white/30 font-bold leading-relaxed text-lg uppercase tracking-widest">Designing the future of family mealtime through intelligence.</p>
-            <div className="flex gap-6">
-               {[1, 2, 3].map(i => (
-                 <div key={i} className="w-14 h-14 bg-white/5 rounded-2xl hover:bg-primary hover:rotate-12 transition-all cursor-pointer flex items-center justify-center border border-white/10">
-                    <div className="w-5 h-5 rounded-full border-2 border-white/20" />
-                 </div>
-               ))}
-            </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-20 w-full lg:w-auto">
             <div className="space-y-10">
@@ -766,10 +754,6 @@ function App() {
         </div>
         <div className="max-w-7xl mx-auto px-10 border-t border-white/5 mt-32 pt-12 flex flex-col md:flex-row justify-between items-center gap-8">
            <p className="text-white/10 text-[10px] font-black tracking-[0.3em] uppercase">© {new Date().getFullYear()} BentoMagic Intelligence Studio</p>
-           <div className="flex items-center gap-8 text-white/20 text-[10px] font-black tracking-widest uppercase">
-              <span>Flux AI Engine</span>
-              <span>Gemini 3.0 Pro</span>
-           </div>
         </div>
       </footer>
     </div>

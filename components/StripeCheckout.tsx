@@ -7,7 +7,7 @@ import {
   EmbeddedCheckout
 } from '@stripe/react-stripe-js';
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
 interface StripeCheckoutProps {
   tokens: number;
@@ -21,7 +21,6 @@ export const StripeCheckout: React.FC<StripeCheckoutProps> = ({ tokens, amount, 
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Call the internal API route to create a session securely on the server
     fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

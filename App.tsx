@@ -6,6 +6,7 @@ import { generateLunchPlan } from './services/geminiService';
 import { InputForm } from './components/InputForm';
 import { LunchCard } from './components/LunchCard';
 import { AuthForm } from './components/AuthForm';
+import { StripeCheckout } from './components/StripeCheckout';
 import { AppleIcon, PrintIcon, UserIcon, CreditCardIcon, LoadingIcon, CheckIcon } from './components/Icons';
 
 type View = 'home' | 'history' | 'profile' | 'pricing' | 'payment' | 'nutrition' | 'contact';
@@ -36,7 +37,6 @@ function App() {
   const [historyFilter, setHistoryFilter] = useState<'all' | 'saved'>('all');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedPack, setSelectedPack] = useState<TokenPack | null>(null);
-  const [processingPayment, setProcessingPayment] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Profile Edit States
@@ -154,17 +154,6 @@ function App() {
     const isSaved = currentSaved.includes(planId);
     const newSaved = isSaved ? currentSaved.filter(id => id !== planId) : [...currentSaved, planId];
     setUser({ ...user, savedPlans: newSaved });
-  };
-
-  const buyTokens = async (pack: TokenPack) => {
-    if (!user) return;
-    setProcessingPayment(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setUser({ ...user, tokens: user.tokens + pack.tokens });
-    setView('home');
-    setSelectedPack(null);
-    setProcessingPayment(false);
-    setToast({ message: `Successfully purchased ${pack.tokens} tokens!`, type: 'success' });
   };
 
   const handleGenerate = async (profile: UserProfile) => {
@@ -496,50 +485,13 @@ function App() {
   const renderPayment = () => {
     if (!selectedPack) return null;
     return (
-      <div className="max-w-xl mx-auto px-4 animate-in zoom-in duration-500">
-        <div className="bg-white p-10 md:p-16 rounded-[3rem] border-4 border-navy/5 shadow-2xl space-y-12">
-          <div className="text-center">
-            <div className="w-24 h-24 bg-bg-cool rounded-[2rem] flex items-center justify-center text-4xl mx-auto mb-8 shadow-inner">{selectedPack.icon}</div>
-            <h2 className="text-3xl font-black text-navy mb-4">Confirm Purchase</h2>
-            <p className="text-navy/40 font-black uppercase tracking-widest text-[10px]">{selectedPack.label} — {selectedPack.tokens} Tokens</p>
-          </div>
-
-          <div className="bg-bg-cool p-8 rounded-3xl space-y-6">
-             <div className="flex justify-between items-center text-[10px] font-black text-navy/40 uppercase tracking-widest">
-               <span>Subtotal</span>
-               <span className="text-navy">{selectedPack.price}</span>
-             </div>
-             <div className="flex justify-between items-center text-[10px] font-black text-navy/40 uppercase tracking-widest">
-               <span>Processing Fee</span>
-               <span className="text-navy">$0.00</span>
-             </div>
-             <div className="h-1 bg-white rounded-full opacity-50" />
-             <div className="flex justify-between items-center text-xl font-black text-navy">
-               <span>Total</span>
-               <span>{selectedPack.price}</span>
-             </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="flex items-center gap-4 text-navy/40 text-[10px] font-black uppercase tracking-widest mb-4">
-              <CreditCardIcon />
-              <span>Mock Payment Method Active</span>
-            </div>
-            <button 
-              onClick={() => buyTokens(selectedPack)}
-              disabled={processingPayment}
-              className="w-full bg-primary text-white py-6 rounded-2xl font-black uppercase tracking-widest shadow-2xl shadow-primary/30 flex items-center justify-center gap-4 disabled:opacity-50"
-            >
-              {processingPayment ? <LoadingIcon /> : 'Complete Secure Purchase'}
-            </button>
-            <button 
-              onClick={() => { setSelectedPack(null); setView('pricing'); }}
-              className="w-full py-4 text-[10px] font-black text-navy/20 uppercase tracking-widest hover:text-navy transition-all"
-            >
-              Cancel and Return
-            </button>
-          </div>
-        </div>
+      <div className="max-w-4xl mx-auto px-4 animate-in zoom-in duration-500">
+        <StripeCheckout 
+          tokens={selectedPack.tokens}
+          amount={selectedPack.price}
+          label={selectedPack.label}
+          onCancel={() => { setSelectedPack(null); setView('pricing'); }}
+        />
       </div>
     );
   };

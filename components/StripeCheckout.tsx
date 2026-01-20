@@ -6,9 +6,8 @@ import {
   EmbeddedCheckoutProvider,
   EmbeddedCheckout
 } from '@stripe/react-stripe-js';
-import { createCheckoutSession } from '../services/stripeService';
 
-const stripePromise = loadStripe(process.env.STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY || '');
 
 interface StripeCheckoutProps {
   tokens: number;
@@ -22,14 +21,23 @@ export const StripeCheckout: React.FC<StripeCheckoutProps> = ({ tokens, amount, 
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    createCheckoutSession(tokens, amount, label)
-      .then((data) => {
-        if (data.clientSecret) {
+    // Call the internal API route to create a session securely on the server
+    fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tokens, amount, label }),
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        if (res.ok && data.clientSecret) {
           setClientSecret(data.clientSecret);
+        } else {
+          setError(data.error || 'Failed to initialize payment.');
         }
       })
       .catch((err) => {
-        setError(err.message || 'Could not connect to payment server.');
+        console.error("Fetch error:", err);
+        setError('Could not connect to payment server.');
       });
   }, [tokens, amount, label]);
 

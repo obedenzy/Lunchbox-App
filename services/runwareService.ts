@@ -1,16 +1,20 @@
-
 export const generateLunchboxImage = async (mealName: string, ingredients: string[], snack: string): Promise<string> => {
-  const RUNWARE_API_KEY = "Orpa0Go54ZXXuIJPgtCfcjXKnH5rXG1J";
+  const RUNWARE_API_KEY = process.env.RUNWARE_API_KEY;
+  
+  if (!RUNWARE_API_KEY) {
+    console.error("RUNWARE_API_KEY is not defined");
+    return "";
+  }
   
   // Runware requires a valid UUIDv4 for each task to track the operation.
   const taskUUID = crypto.randomUUID();
   
   const ingredientsText = ingredients.join('\n');
   const prompt = `Hyper-realistic, professional food photography of a healthy kid's bento lunchbox Packed in a modern, clean bento box, soft natural morning light, appetizing colors, studio quality, culinary magazine style, 8k resolution, delicious arrangement, centered composition, white background.
-${mealName}:
+\${mealName}:
 ingredients:
-${ingredientsText}
-Snack: ${snack}`;
+\${ingredientsText}
+Snack: \${snack}`;
   
   // Requirement: console.log the image text prompt sent in the request.
   console.log("Runware Image Prompt:", prompt);
@@ -41,7 +45,7 @@ Snack: ${snack}`;
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Runware API error (${response.status}): ${errorText}`);
+      throw new Error(`Runware API error (\${response.status}): \${errorText}`);
     }
 
     const result = await response.json();
@@ -55,7 +59,7 @@ Snack: ${snack}`;
     }
     
     if (result.errors && result.errors.length > 0) {
-      throw new Error(`Runware Error: ${result.errors[0].message}`);
+      throw new Error(`Runware Error: \${result.errors[0].message}`);
     }
     
     throw new Error("No image URL returned from Runware.");

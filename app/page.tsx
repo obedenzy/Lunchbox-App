@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -6,6 +5,7 @@ import { UserProfile, WeeklyPlan, User } from '../types';
 import { InputForm } from '../components/InputForm';
 import { LunchCard } from '../components/LunchCard';
 import { AuthForm } from '../components/AuthForm';
+import { StripeCheckout } from '../components/StripeCheckout';
 import { AppleIcon, PrintIcon, UserIcon, LoadingIcon, CheckIcon } from '../components/Icons';
 
 type View = 'home' | 'history' | 'profile' | 'pricing' | 'payment' | 'nutrition' | 'contact';
@@ -36,7 +36,6 @@ export default function App() {
   const [historyFilter, setHistoryFilter] = useState<'all' | 'saved'>('all');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedPack, setSelectedPack] = useState<TokenPack | null>(null);
-  const [processingPayment, setProcessingPayment] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Profile Edit States
@@ -145,17 +144,6 @@ export default function App() {
     setUser({ ...user, savedPlans: newSaved });
   };
 
-  const buyTokens = async (pack: TokenPack) => {
-    if (!user) return;
-    setProcessingPayment(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setUser({ ...user, tokens: user.tokens + pack.tokens });
-    setView('home');
-    setSelectedPack(null);
-    setProcessingPayment(false);
-    setToast({ message: `Successfully purchased ${pack.tokens} tokens!`, type: 'success' });
-  };
-
   const handleGenerate = async (profile: UserProfile) => {
     if (!user || user.tokens <= 0) {
       setError("Insufficient tokens. Visit the pricing section to continue.");
@@ -166,7 +154,6 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      // CALLED SERVER-SIDE API
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

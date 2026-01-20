@@ -1,9 +1,8 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { NextResponse } from "next/server";
 import { UserProfile } from "../../../types";
 
-const RUNWARE_API_KEY = "Orpa0Go54ZXXuIJPgtCfcjXKnH5rXG1J";
+const RUNWARE_API_KEY = process.env.RUNWARE_API_KEY;
 
 async function generateRunwareImage(mealName: string, ingredients: string[], snack: string): Promise<string> {
   const taskUUID = crypto.randomUUID();
@@ -50,8 +49,7 @@ Snack: ${snack}`;
 export async function POST(req: Request) {
   try {
     const profile: UserProfile = await req.json();
-    // Initialize GoogleGenAI using process.env.API_KEY directly as per SDK guidelines
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || process.env.GEMINI_API_KEY });
 
     const prompt = `Create a 7-day (Monday to Sunday) kid-friendly lunchbox plan for a ${profile.age} year old for the period: ${profile.targetWeek}.
     Restrictions: ${profile.allergies.join(', ') || 'None'}.
@@ -127,7 +125,6 @@ export async function POST(req: Request) {
     const rawPlan = JSON.parse(response.text || "{}");
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-    // Concurrent image generation on the server
     const imagePromises = days.map(day => 
       generateRunwareImage(
         rawPlan[day].name, 

@@ -226,7 +226,7 @@ function PageContent() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 no-print border-b-8 border-navy/5 pb-12">
             <div className="text-left">
               <p className="text-primary font-black text-[10px] tracking-[0.3em] uppercase mb-2">Selected Schedule</p>
-              <h2 className="text-4xl md:text-6xl font-black text-navy tracking-tight">{plan.weekLabel}</h2>
+              <h2 className="text-[2.25rem] font-black text-navy tracking-tight leading-tight">{plan.weekLabel}</h2>
               <p className="text-navy/30 font-bold text-xs mt-3 uppercase tracking-widest">
                 Generated {new Date(plan.timestamp).toLocaleDateString()} for {plan.profile.age} Year Old
               </p>

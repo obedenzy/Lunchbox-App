@@ -1224,6 +1224,9 @@ video {
 .text-\[9px\] {
   font-size: 9px;
 }
+.text-\[2\.25rem\] {
+  font-size: 2.25rem;
+}
 .font-black {
   font-weight: 900;
 }

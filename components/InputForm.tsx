@@ -24,11 +24,15 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading, initi
   const weekOptions = useMemo(() => {
     const options: string[] = [];
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const firstDay = new Date(year, month, 1);
-    let current = new Date(firstDay);
-    while (current.getDay() !== 1) current.setDate(current.getDate() + 1);
+    
+    // Find Monday of the current week
+    let current = new Date(now);
+    const day = current.getDay();
+    // Adjust to Monday: diff is (day of month) - (day of week) + 1
+    // If it's Sunday (0), we go back to the previous Monday
+    const diff = current.getDate() - day + (day === 0 ? -6 : 1);
+    current.setDate(diff);
+
     for (let i = 1; i <= 4; i++) {
       const end = new Date(current);
       end.setDate(current.getDate() + 6);
@@ -44,13 +48,12 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading, initi
 
   useEffect(() => {
     if (initialProfile) {
-      setAge(initialProfile.age);
+      setAge(initialProfile.age || 6);
       setSelectedAllergies(initialProfile.allergies || []);
-      setDietType(initialProfile.dietType);
-      setPreferences(initialProfile.preferences);
-      setTargetWeek(initialProfile.targetWeek || weekOptions[0]);
+      setDietType(initialProfile.dietType || 'Omnivore');
+      setPreferences(initialProfile.preferences || '');
     }
-  }, [initialProfile, weekOptions]);
+  }, [initialProfile]);
 
   const toggleAllergy = (allergy: string) => {
     setSelectedAllergies(prev => 

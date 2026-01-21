@@ -25,11 +25,8 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading, initi
     const options: string[] = [];
     const now = new Date();
     
-    // Find Monday of the current week
     let current = new Date(now);
     const day = current.getDay();
-    // Adjust to Monday: diff is (day of month) - (day of week) + 1
-    // If it's Sunday (0), we go back to the previous Monday
     const diff = current.getDate() - day + (day === 0 ? -6 : 1);
     current.setDate(diff);
 
@@ -62,8 +59,9 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading, initi
   };
 
   const handleAddCustomAllergy = () => {
-    if (customAllergy.trim() && !selectedAllergies.includes(customAllergy.trim())) {
-      setSelectedAllergies(prev => [...prev, customAllergy.trim()]);
+    const trimmed = customAllergy.trim();
+    if (trimmed && !selectedAllergies.includes(trimmed)) {
+      setSelectedAllergies(prev => [...prev, trimmed]);
       setCustomAllergy('');
     }
   };
@@ -72,6 +70,9 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading, initi
     e.preventDefault();
     onSubmit({ age, allergies: selectedAllergies, dietType, preferences, targetWeek });
   };
+
+  // Find allergies that aren't in the predefined list
+  const customAllergies = selectedAllergies.filter(a => !PREDEFINED_ALLERGIES.includes(a as any));
 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-6 md:p-16 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-navy/5 border-4 border-navy/5 text-left">
@@ -146,6 +147,19 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading, initi
                 }`}
               >
                 {selectedAllergies.includes(allergy) && <CheckIcon />}
+                {allergy}
+              </button>
+            ))}
+            
+            {/* Custom Allergies Display */}
+            {customAllergies.map(allergy => (
+              <button
+                key={allergy}
+                type="button"
+                onClick={() => toggleAllergy(allergy)}
+                className="flex items-center gap-2 py-2.5 px-4 md:px-6 rounded-xl text-[10px] font-black tracking-wide border-2 border-primary bg-primary text-white shadow-lg transition-all"
+              >
+                <CheckIcon />
                 {allergy}
               </button>
             ))}

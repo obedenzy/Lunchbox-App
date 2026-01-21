@@ -26,6 +26,7 @@ const TOKEN_PACKS: TokenPack[] = [
 ];
 
 export default function Page() {
+  const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [plan, setPlan] = useState<WeeklyPlan | null>(null);
   const [currentProfileDraft, setCurrentProfileDraft] = useState<UserProfile | null>(null);
@@ -33,28 +34,25 @@ export default function Page() {
   const [view, setView] = useState<View>('home');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [historyFilter, setHistoryFilter] = useState<'all' | 'saved'>('all');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedPack, setSelectedPack] = useState<TokenPack | null>(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const savedHistory = localStorage.getItem('bento_history');
     if (savedHistory) setHistory(JSON.parse(savedHistory));
     
     const savedUser = localStorage.getItem('bento_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
 
   useEffect(() => {
-    if (user) localStorage.setItem('bento_user', JSON.stringify(user));
-  }, [user]);
+    if (mounted && user) localStorage.setItem('bento_user', JSON.stringify(user));
+  }, [user, mounted]);
 
   useEffect(() => {
-    localStorage.setItem('bento_history', JSON.stringify(history));
-  }, [history]);
+    if (mounted) localStorage.setItem('bento_history', JSON.stringify(history));
+  }, [history, mounted]);
 
   useEffect(() => {
     if (toast) {
@@ -62,6 +60,8 @@ export default function Page() {
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
+  if (!mounted) return null;
 
   const handleLogin = (email: string, pass: string) => {
     const mockUser: User = {
@@ -141,37 +141,26 @@ export default function Page() {
 
   const navigateTo = (v: View) => {
     setView(v);
-    setIsMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const toggleSavePlan = (planId: string) => {
-    if (!user) return;
-    const currentSaved = user.savedPlans || [];
-    const isSaved = currentSaved.includes(planId);
-    const newSaved = isSaved ? currentSaved.filter(id => id !== planId) : [...currentSaved, planId];
-    setUser({ ...user, savedPlans: newSaved });
-  };
-
-  const isPlanSaved = (planId: string) => user?.savedPlans?.includes(planId) || false;
-
   const renderHome = () => (
     <div className="space-y-12 md:space-y-24 px-4">
-      <section className="max-w-4xl mx-auto no-print">
-        {user ? (
-          <InputForm onSubmit={handleGenerate} isLoading={loading} initialProfile={currentProfileDraft} />
-        ) : (
+      <section className="max-w-4xl mx-auto">
+        {!user ? (
           <AuthForm onLogin={handleLogin} onSignup={handleSignup} />
+        ) : (
+          <InputForm onSubmit={handleGenerate} isLoading={loading} initialProfile={currentProfileDraft} />
         )}
         {error && (
-          <div className="mt-8 p-6 bg-primary/10 border border-primary/20 text-primary-dark rounded-2xl text-center text-sm font-black animate-pulse">
+          <div className="mt-8 p-6 bg-primary/10 border border-primary/20 text-primary-dark rounded-2xl text-center text-sm font-black">
             {error}
           </div>
         )}
       </section>
 
       {loading && (
-        <div className="max-w-4xl mx-auto py-24 flex flex-col items-center animate-pulse">
+        <div className="max-w-4xl mx-auto py-24 flex flex-col items-center">
           <div className="w-20 h-20 border-8 border-navy/5 border-t-primary rounded-full animate-spin mb-8"></div>
           <h3 className="text-2xl font-black text-navy mb-2">Designing Your Child's Next Favorite Lunch</h3>
           <p className="text-navy/40 font-black tracking-widest text-xs uppercase">Curating ingredients & generating AI photography...</p>
@@ -180,67 +169,24 @@ export default function Page() {
 
       {plan && !loading && (
         <section className="space-y-12 md:space-y-16 max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 no-print border-b-8 border-navy/5 pb-12">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b-8 border-navy/5 pb-12">
             <div className="space-y-2 text-left">
               <p className="text-primary font-black text-xs tracking-widest uppercase">{plan.weekLabel}</p>
               <h2 className="text-4xl md:text-6xl font-black text-navy tracking-tight">Your Weekly Menu</h2>
             </div>
-            <div className="flex flex-wrap gap-3 w-full md:w-auto">
-              <button
-                onClick={() => toggleSavePlan(plan.id)}
-                className={`flex-1 md:flex-none flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black transition-all text-sm tracking-wide border-4 ${
-                  isPlanSaved(plan.id) 
-                    ? 'bg-primary text-white border-primary shadow-2xl shadow-primary/30' 
-                    : 'bg-white border-navy text-navy hover:bg-navy hover:text-white'
-                }`}
-              >
-                {isPlanSaved(plan.id) ? 'Saved' : 'Save Plan'}
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="flex-1 md:flex-none flex items-center justify-center gap-3 bg-navy text-white px-8 py-4 rounded-2xl font-black text-sm tracking-wide hover:bg-navy/90 transition-all shadow-xl"
-              >
-                <PrintIcon />
-                Print
-              </button>
-            </div>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center justify-center gap-3 bg-navy text-white px-8 py-4 rounded-2xl font-black text-sm tracking-wide hover:bg-navy/90 shadow-xl"
+            >
+              <PrintIcon /> Print
+            </button>
           </div>
-
           <div className="flex flex-col gap-12 md:gap-24 pb-20">
             {(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const).map(day => (
               <LunchCard key={day} day={day} data={plan[day]} />
             ))}
           </div>
         </section>
-      )}
-    </div>
-  );
-
-  const renderHistory = () => (
-    <div className="max-w-6xl mx-auto space-y-12 px-4">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b-4 border-navy/5 pb-10">
-        <div className="space-y-2 text-left">
-          <h2 className="text-4xl md:text-5xl font-black text-navy tracking-tight">Your History</h2>
-          <p className="text-navy/40 font-black text-xs uppercase tracking-widest">Access your past lunch plans</p>
-        </div>
-      </div>
-      {history.length === 0 ? (
-        <div className="py-32 text-center bg-white rounded-[3rem] border-4 border-navy/5">
-          <h3 className="text-2xl font-black text-navy mb-4">No plans yet</h3>
-          <button onClick={() => navigateTo('home')} className="mt-10 bg-primary text-white px-10 py-4 rounded-2xl font-black text-xs tracking-widest uppercase">Go Home</button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
-          {history.map(h => (
-            <div key={h.id} className="bg-white p-8 rounded-[2rem] border-4 border-navy/5 hover:border-primary/20 transition-all cursor-pointer" onClick={() => { setPlan(h); navigateTo('home'); }}>
-              <span className="text-[10px] font-black text-primary uppercase tracking-widest">{h.weekLabel}</span>
-              <h4 className="text-xl font-black text-navy mt-4 mb-4">{h.Monday.name}</h4>
-              <div className="text-navy/40 text-[10px] font-black uppercase tracking-widest">
-                {h.profile.age} Years • {h.profile.dietType}
-              </div>
-            </div>
-          ))}
-        </div>
       )}
     </div>
   );
@@ -257,7 +203,12 @@ export default function Page() {
             <div className="text-6xl">{pack.icon}</div>
             <h3 className="text-2xl font-black text-navy">{pack.label}</h3>
             <div className="text-4xl font-black text-primary">{pack.price}</div>
-            <button onClick={() => { setSelectedPack(pack); setView('payment'); }} className="w-full bg-navy text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-primary transition-all">Select</button>
+            <button 
+              onClick={() => { setSelectedPack(pack); setView('payment'); }} 
+              className="w-full bg-navy text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-primary transition-all"
+            >
+              Select
+            </button>
           </div>
         ))}
       </div>
@@ -272,7 +223,7 @@ export default function Page() {
         </div>
       )}
 
-      <nav className="sticky top-0 z-[100] bg-white/95 backdrop-blur-3xl border-b-4 border-navy/5 h-24 flex items-center justify-between px-10 no-print">
+      <nav className="sticky top-0 z-[100] bg-white/95 backdrop-blur-3xl border-b-4 border-navy/5 h-24 flex items-center justify-between px-10">
         <div className="flex items-center gap-4 cursor-pointer" onClick={() => navigateTo('home')}>
           <div className="p-3 bg-primary text-white rounded-2xl shadow-xl"><AppleIcon /></div>
           <span className="text-2xl font-black text-navy">BentoMagic</span>
@@ -280,27 +231,17 @@ export default function Page() {
         <div className="flex items-center gap-8 font-black text-[10px] uppercase tracking-widest text-navy/40">
           <button onClick={() => navigateTo('home')} className={view === 'home' ? 'text-primary' : ''}>Home</button>
           <button onClick={() => navigateTo('pricing')} className={view === 'pricing' ? 'text-primary' : ''}>Pricing</button>
-          {user && <button onClick={() => navigateTo('history')} className={view === 'history' ? 'text-primary' : ''}>History</button>}
-          {user && <span className="bg-navy text-white px-4 py-2 rounded-xl">{user.tokens} Tokens</span>}
-          {user && <button onClick={handleLogout}>Logout</button>}
+          {user && (
+            <>
+              <span className="bg-navy text-white px-4 py-2 rounded-xl">{user.tokens} Tokens</span>
+              <button onClick={handleLogout}>Logout</button>
+            </>
+          )}
         </div>
       </nav>
 
-      <header className="max-w-7xl mx-auto pt-20 md:pt-40 pb-16 md:pb-32 text-center no-print px-6">
-        <div className="inline-block px-8 py-3 bg-secondary/10 text-secondary-dark rounded-full text-[10px] font-black tracking-[0.3em] mb-12 border-4 border-secondary/20 uppercase">
-          BentoMagic Magic AI Engine
-        </div>
-        <h1 className="text-6xl md:text-8xl font-black text-navy mb-12 tracking-tighter">
-          Healthy Kids Lunch Plans
-        </h1>
-        <p className="text-navy/40 font-bold tracking-widest text-xs md:text-sm max-w-xl mx-auto uppercase leading-loose">
-          Wholesome, delicious, and easy-to-prep lunch box ideas tailored for growing kids.
-        </p>
-      </header>
-
-      <main className="flex-1 pb-32">
+      <main className="flex-1 pb-32 pt-12">
         {view === 'home' && renderHome()}
-        {view === 'history' && renderHistory()}
         {view === 'pricing' && renderPricing()}
         {view === 'payment' && selectedPack && (
           <StripeCheckout tokens={selectedPack.tokens} amount={selectedPack.price} label={selectedPack.label} onCancel={() => setView('pricing')} />

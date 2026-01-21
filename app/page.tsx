@@ -37,6 +37,7 @@ function PageContent() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedPack, setSelectedPack] = useState<TokenPack | null>(null);
+  const [currentFormState, setCurrentFormState] = useState<UserProfile | null>(null);
 
   // Profile Edit States
   const [editName, setEditName] = useState('');
@@ -58,6 +59,16 @@ function PageContent() {
         setEditName(parsedUser.name);
         setDefaultAge(parsedUser.defaultSettings?.childAge || 6);
         setDefaultDiet(parsedUser.defaultSettings?.dietType || 'Omnivore');
+        // Set initial form state from defaults if nothing else is active
+        if (!currentFormState) {
+          setCurrentFormState({
+            age: parsedUser.defaultSettings?.childAge || 6,
+            dietType: parsedUser.defaultSettings?.dietType || 'Omnivore',
+            allergies: [],
+            preferences: '',
+            targetWeek: ''
+          });
+        }
       }
     };
     
@@ -202,6 +213,13 @@ function PageContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const loadHistoryPlan = (h: WeeklyPlan) => {
+    setPlan(h);
+    setCurrentFormState(h.profile);
+    navigateTo('home');
+    setToast({ message: "Loaded plan settings into form", type: 'success' });
+  };
+
   const renderHome = () => (
     <div className="space-y-12 md:space-y-24 px-4">
       <header className="text-center no-print">
@@ -209,7 +227,7 @@ function PageContent() {
         <p className="text-navy/40 font-bold tracking-widest text-xs uppercase">Wholesome ideas tailored for growing kids.</p>
       </header>
       <section className="max-w-4xl mx-auto">
-        {!user ? <AuthForm onLogin={handleLogin} onSignup={handleSignup} /> : <InputForm onSubmit={handleGenerate} isLoading={loading} initialProfile={user.defaultSettings ? { age: user.defaultSettings.childAge, dietType: user.defaultSettings.dietType, allergies: [], preferences: '', targetWeek: '' } : null} />}
+        {!user ? <AuthForm onLogin={handleLogin} onSignup={handleSignup} /> : <InputForm onSubmit={handleGenerate} isLoading={loading} initialProfile={currentFormState} />}
         {error && <div className="mt-8 p-6 bg-primary/10 text-primary-dark rounded-2xl text-center font-black">{error}</div>}
       </section>
       
@@ -222,7 +240,6 @@ function PageContent() {
 
       {plan && !loading && (
         <div className="space-y-12 md:space-y-24 max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-12 duration-1000">
-          {/* Result Section Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 no-print border-b-8 border-navy/5 pb-12">
             <div className="text-left">
               <p className="text-primary font-black text-[10px] tracking-[0.3em] uppercase mb-2">Selected Schedule</p>
@@ -268,7 +285,7 @@ function PageContent() {
   );
 
   const renderHistory = () => (
-    <div className="max-w-6xl mx-auto px-4 space-y-12">
+    <div className="max-w-7xl mx-auto px-4 space-y-12">
       <div className="flex justify-between items-center border-b-4 border-navy/5 pb-8">
         <h2 className="text-5xl font-black text-navy tracking-tight">Your History</h2>
         <div className="bg-bg-cool px-6 py-3 rounded-xl text-[10px] font-black text-navy/40 uppercase tracking-widest">
@@ -282,25 +299,52 @@ function PageContent() {
           <button onClick={() => navigateTo('home')} className="mt-8 bg-navy text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary transition-all shadow-xl">Start Planning</button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
+        <div className="space-y-8">
           {history.map(h => (
             <div 
               key={h.id} 
-              className={`bg-white p-10 rounded-[2.5rem] border-4 transition-all shadow-xl group cursor-pointer ${
-                isPlanSaved(h.id) ? 'border-primary shadow-primary/10' : 'border-navy/5 hover:border-primary/20'
+              className={`bg-white p-8 md:p-12 rounded-[2.5rem] md:rounded-[3rem] border-4 transition-all shadow-2xl shadow-navy/5 group cursor-pointer text-left relative overflow-hidden ${
+                isPlanSaved(h.id) ? 'border-primary' : 'border-navy/5 hover:border-primary/20'
               }`} 
-              onClick={() => { setPlan(h); setView('home'); }}
+              onClick={() => loadHistoryPlan(h)}
             >
-              <div className="flex justify-between items-start mb-6">
-                <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{h.weekLabel}</span>
-                {isPlanSaved(h.id) && (
-                  <div className="w-6 h-6 bg-primary text-white rounded-lg flex items-center justify-center text-[10px]">★</div>
-                )}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 relative z-10">
+                <div className="lg:col-span-4 space-y-6">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{h.weekLabel}</span>
+                    {isPlanSaved(h.id) && (
+                      <div className="bg-primary text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest">Saved Plan</div>
+                    )}
+                  </div>
+                  <h4 className="text-3xl font-black text-navy group-hover:text-primary transition-colors leading-tight">Weekly Overview</h4>
+                  
+                  <div className="space-y-4 pt-4 border-t-2 border-bg-cool">
+                     <p className="text-[10px] font-black text-navy/30 uppercase tracking-widest">Profile Configuration</p>
+                     <div className="flex flex-wrap gap-2">
+                        <span className="px-3 py-1 bg-navy text-white rounded-lg text-[9px] font-black uppercase tracking-wide">{h.profile.age} Years</span>
+                        <span className="px-3 py-1 bg-secondary text-white rounded-lg text-[9px] font-black uppercase tracking-wide">{h.profile.dietType}</span>
+                        {h.profile.allergies.map(a => (
+                          <span key={a} className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-[9px] font-black uppercase tracking-wide">{a}</span>
+                        ))}
+                     </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const).map(day => (
+                    <div key={day} className="bg-bg-cool/50 p-4 rounded-2xl border-2 border-transparent group-hover:border-white transition-all">
+                       <p className="text-[8px] font-black text-navy/30 uppercase tracking-widest mb-1">{day}</p>
+                       <p className="text-xs font-black text-navy line-clamp-2">{h[day].name}</p>
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-center p-4 bg-primary text-white rounded-2xl shadow-lg shadow-primary/20">
+                     <span className="text-[10px] font-black uppercase tracking-widest">Load View</span>
+                  </div>
+                </div>
               </div>
-              <h4 className="text-2xl font-black text-navy group-hover:text-primary transition-colors leading-tight mb-4">{h.Monday.name}</h4>
-              <div className="flex flex-wrap gap-2">
-                <span className="px-3 py-1 bg-bg-cool rounded-lg text-[9px] font-black text-navy/40 uppercase">{h.profile.age}Y</span>
-                <span className="px-3 py-1 bg-bg-cool rounded-lg text-[9px] font-black text-navy/40 uppercase">{h.profile.dietType}</span>
+              
+              <div className="absolute top-0 right-0 p-8 text-8xl opacity-[0.02] font-black -rotate-12 pointer-events-none uppercase">
+                {h.weekLabel.split(':')[0]}
               </div>
             </div>
           ))}
@@ -327,7 +371,6 @@ function PageContent() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Account Settings */}
           <div className="space-y-10">
             <h3 className="text-xl font-black text-navy tracking-tight flex items-center gap-3">
               <div className="w-2 h-8 bg-primary rounded-full" />
@@ -371,7 +414,6 @@ function PageContent() {
             </form>
           </div>
 
-          {/* Security */}
           <div className="space-y-10">
             <h3 className="text-xl font-black text-navy tracking-tight flex items-center gap-3">
               <div className="w-2 h-8 bg-secondary rounded-full" />

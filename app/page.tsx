@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { UserProfile, WeeklyPlan, User } from '../types';
 import { InputForm } from '../components/InputForm';
 import { LunchCard } from '../components/LunchCard';
 import { AuthForm } from '../components/AuthForm';
 import { StripeCheckout } from '../components/StripeCheckout';
-import { AppleIcon, PrintIcon, UserIcon, LoadingIcon, CheckIcon, CreditCardIcon } from '../components/Icons';
+import { AppleIcon, PrintIcon, UserIcon, LoadingIcon, CheckIcon } from '../components/Icons';
 
 type View = 'home' | 'history' | 'profile' | 'pricing' | 'payment' | 'nutrition' | 'contact';
 
@@ -25,11 +26,11 @@ const TOKEN_PACKS: TokenPack[] = [
   { tokens: 50, price: '$24.99', priceId: 'price_chef', label: 'Master Chef', icon: '🏆' }
 ];
 
-export default function Page() {
+function PageContent() {
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [plan, setPlan] = useState<WeeklyPlan | null>(null);
-  const [currentProfileDraft, setCurrentProfileDraft] = useState<UserProfile | null>(null);
   const [history, setHistory] = useState<WeeklyPlan[]>([]);
   const [view, setView] = useState<View>('home');
   const [loading, setLoading] = useState(false);
@@ -42,9 +43,23 @@ export default function Page() {
     const savedHistory = localStorage.getItem('bento_history');
     if (savedHistory) setHistory(JSON.parse(savedHistory));
     
-    const savedUser = localStorage.getItem('bento_user');
-    if (savedUser) setUser(JSON.parse(savedUser));
-  }, []);
+    const loadUser = () => {
+      const savedUser = localStorage.getItem('bento_user');
+      if (savedUser) setUser(JSON.parse(savedUser));
+    };
+    
+    loadUser();
+
+    // Handle payment success redirect
+    const viewParam = searchParams.get('view') as View;
+    const paymentParam = searchParams.get('payment');
+    
+    if (viewParam) setView(viewParam);
+    if (paymentParam === 'success') {
+      loadUser(); // Reload user to get updated tokens
+      setToast({ message: "Credits updated successfully!", type: 'success' });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (mounted && user) localStorage.setItem('bento_user', JSON.stringify(user));
@@ -75,22 +90,16 @@ export default function Page() {
       stats: { totalPlansGenerated: 0, joinedDate: new Date().toLocaleDateString() }
     };
     setUser(mockUser);
-    setToast({ message: "Welcome back!", type: 'success' });
   };
 
   const handleSignup = (name: string, email: string, pass: string) => {
     const newUser: User = {
       id: Math.random().toString(36).substr(2, 9),
-      name: name,
-      email: email,
-      tokens: 5,
-      isLoggedIn: true,
-      savedPlans: [],
+      name: name, email: email, tokens: 5, isLoggedIn: true, savedPlans: [],
       defaultSettings: { childAge: 6, dietType: 'Omnivore' },
       stats: { totalPlansGenerated: 0, joinedDate: new Date().toLocaleDateString() }
     };
     setUser(newUser);
-    setToast({ message: "Welcome to BentoMagic!", type: 'success' });
   };
 
   const handleLogout = () => {
@@ -98,7 +107,6 @@ export default function Page() {
     localStorage.removeItem('bento_user');
     setPlan(null);
     setView('home');
-    setToast({ message: "Signed out.", type: 'success' });
   };
 
   const handleGenerate = async (profile: UserProfile) => {
@@ -107,7 +115,6 @@ export default function Page() {
       setView('pricing');
       return;
     }
-
     setLoading(true);
     setError(null);
     try {
@@ -116,10 +123,8 @@ export default function Page() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile),
       });
-
       if (!response.ok) throw new Error("Generation failed.");
       const rawPlan = await response.json();
-
       const generatedPlan: WeeklyPlan = {
         id: Math.random().toString(36).substr(2, 9),
         timestamp: Date.now(),
@@ -127,11 +132,9 @@ export default function Page() {
         profile: profile,
         ...rawPlan
       };
-
       setPlan(generatedPlan);
       setHistory(prev => [generatedPlan, ...prev]);
       setUser(prev => prev ? ({ ...prev, tokens: prev.tokens - 1 }) : null);
-      setToast({ message: "Plan generated!", type: 'success' });
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -146,69 +149,70 @@ export default function Page() {
 
   const renderHome = () => (
     <div className="space-y-12 md:space-y-24 px-4">
+      <header className="text-center no-print">
+        <h1 className="text-6xl md:text-8xl font-black text-navy mb-12 tracking-tighter">Healthy Kids Lunch Plans</h1>
+        <p className="text-navy/40 font-bold tracking-widest text-xs uppercase">Wholesome ideas tailored for growing kids.</p>
+      </header>
       <section className="max-w-4xl mx-auto">
-        {!user ? (
-          <AuthForm onLogin={handleLogin} onSignup={handleSignup} />
-        ) : (
-          <InputForm onSubmit={handleGenerate} isLoading={loading} initialProfile={currentProfileDraft} />
-        )}
-        {error && (
-          <div className="mt-8 p-6 bg-primary/10 border border-primary/20 text-primary-dark rounded-2xl text-center text-sm font-black">
-            {error}
-          </div>
-        )}
+        {!user ? <AuthForm onLogin={handleLogin} onSignup={handleSignup} /> : <InputForm onSubmit={handleGenerate} isLoading={loading} />}
+        {error && <div className="mt-8 p-6 bg-primary/10 text-primary-dark rounded-2xl text-center font-black">{error}</div>}
       </section>
-
-      {loading && (
-        <div className="max-w-4xl mx-auto py-24 flex flex-col items-center">
-          <div className="w-20 h-20 border-8 border-navy/5 border-t-primary rounded-full animate-spin mb-8"></div>
-          <h3 className="text-2xl font-black text-navy mb-2">Designing Your Child's Next Favorite Lunch</h3>
-          <p className="text-navy/40 font-black tracking-widest text-xs uppercase">Curating ingredients & generating AI photography...</p>
-        </div>
-      )}
-
+      {loading && <div className="py-24 text-center space-y-4"><div className="w-16 h-16 border-4 border-navy/5 border-t-primary rounded-full animate-spin mx-auto"></div><p className="text-navy/40 font-black uppercase text-xs">Generating Plan...</p></div>}
       {plan && !loading && (
-        <section className="space-y-12 md:space-y-16 max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b-8 border-navy/5 pb-12">
-            <div className="space-y-2 text-left">
-              <p className="text-primary font-black text-xs tracking-widest uppercase">{plan.weekLabel}</p>
-              <h2 className="text-4xl md:text-6xl font-black text-navy tracking-tight">Your Weekly Menu</h2>
-            </div>
-            <button
-              onClick={() => window.print()}
-              className="flex items-center justify-center gap-3 bg-navy text-white px-8 py-4 rounded-2xl font-black text-sm tracking-wide hover:bg-navy/90 shadow-xl"
-            >
-              <PrintIcon /> Print
-            </button>
-          </div>
-          <div className="flex flex-col gap-12 md:gap-24 pb-20">
-            {(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const).map(day => (
-              <LunchCard key={day} day={day} data={plan[day]} />
-            ))}
-          </div>
-        </section>
+        <div className="flex flex-col gap-12 md:gap-24 pb-20 max-w-6xl mx-auto">
+          {(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const).map(day => (
+            <LunchCard key={day} day={day} data={plan[day]} />
+          ))}
+        </div>
       )}
     </div>
   );
 
-  const renderPricing = () => (
-    <div className="max-w-6xl mx-auto space-y-24 px-4">
-      <div className="text-center space-y-6">
-        <h2 className="text-5xl md:text-7xl font-black text-navy tracking-tight">Fuel Your Planning</h2>
-        <p className="text-navy/40 font-bold max-w-xl mx-auto uppercase tracking-widest text-xs">Credits are only consumed on successful generation.</p>
+  const renderHistory = () => (
+    <div className="max-w-6xl mx-auto px-4 space-y-12">
+      <h2 className="text-5xl font-black text-navy text-left">Your History</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+        {history.map(h => (
+          <div key={h.id} className="bg-white p-8 rounded-[2rem] border-4 border-navy/5 cursor-pointer hover:border-primary/20 transition-all" onClick={() => { setPlan(h); setView('home'); }}>
+            <span className="text-[10px] font-black text-primary uppercase">{h.weekLabel}</span>
+            <h4 className="text-xl font-black mt-2">{h.Monday.name}</h4>
+          </div>
+        ))}
       </div>
+    </div>
+  );
+
+  const renderProfile = () => (
+    <div className="max-w-4xl mx-auto px-4">
+      <div className="bg-white p-12 rounded-[3rem] border-4 border-navy/5 shadow-2xl text-left space-y-8">
+        <div className="flex items-center gap-8 border-b-4 border-bg-cool pb-8">
+          <div className="w-20 h-20 bg-primary text-white rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/20"><UserIcon className="w-10 h-10" /></div>
+          <div>
+            <h2 className="text-4xl font-black text-navy">{user?.name}</h2>
+            <p className="text-navy/40 font-black uppercase text-[10px]">{user?.email}</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="bg-bg-cool p-8 rounded-2xl">
+            <p className="text-[10px] font-black text-navy/40 uppercase mb-2">Available Credits</p>
+            <p className="text-4xl font-black text-navy">{user?.tokens} Tokens</p>
+          </div>
+          <button onClick={() => navigateTo('pricing')} className="bg-navy text-white p-8 rounded-2xl font-black uppercase text-xs hover:bg-primary transition-all">Buy More Credits</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPricing = () => (
+    <div className="max-w-6xl mx-auto px-4 space-y-20">
+      <h2 className="text-6xl font-black text-navy text-center">Fuel Your Planning</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {TOKEN_PACKS.map(pack => (
           <div key={pack.priceId} className={`bg-white p-12 rounded-[3rem] border-4 text-center space-y-8 ${pack.popular ? 'border-primary shadow-2xl scale-105' : 'border-navy/5'}`}>
             <div className="text-6xl">{pack.icon}</div>
-            <h3 className="text-2xl font-black text-navy">{pack.label}</h3>
+            <h3 className="text-2xl font-black">{pack.label}</h3>
             <div className="text-4xl font-black text-primary">{pack.price}</div>
-            <button 
-              onClick={() => { setSelectedPack(pack); setView('payment'); }} 
-              className="w-full bg-navy text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-primary transition-all"
-            >
-              Select
-            </button>
+            <button onClick={() => { setSelectedPack(pack); setView('payment'); }} className="w-full bg-navy text-white py-4 rounded-2xl font-black uppercase tracking-widest">Select</button>
           </div>
         ))}
       </div>
@@ -222,31 +226,42 @@ export default function Page() {
           {toast.message}
         </div>
       )}
-
       <nav className="sticky top-0 z-[100] bg-white/95 backdrop-blur-3xl border-b-4 border-navy/5 h-24 flex items-center justify-between px-10">
         <div className="flex items-center gap-4 cursor-pointer" onClick={() => navigateTo('home')}>
           <div className="p-3 bg-primary text-white rounded-2xl shadow-xl"><AppleIcon /></div>
           <span className="text-2xl font-black text-navy">BentoMagic</span>
         </div>
-        <div className="flex items-center gap-8 font-black text-[10px] uppercase tracking-widest text-navy/40">
+        <div className="flex items-center gap-6 md:gap-8 font-black text-[10px] uppercase tracking-widest text-navy/40">
           <button onClick={() => navigateTo('home')} className={view === 'home' ? 'text-primary' : ''}>Home</button>
           <button onClick={() => navigateTo('pricing')} className={view === 'pricing' ? 'text-primary' : ''}>Pricing</button>
           {user && (
             <>
-              <span className="bg-navy text-white px-4 py-2 rounded-xl">{user.tokens} Tokens</span>
+              <button onClick={() => navigateTo('history')} className={view === 'history' ? 'text-primary' : ''}>History</button>
+              <div onClick={() => navigateTo('profile')} className={`w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer transition-all border-2 ${view === 'profile' ? 'bg-primary text-white border-primary' : 'bg-bg-cool text-navy border-transparent hover:border-primary/20'}`}>
+                <UserIcon className="w-6 h-6" />
+              </div>
               <button onClick={handleLogout}>Logout</button>
             </>
           )}
         </div>
       </nav>
-
       <main className="flex-1 pb-32 pt-12">
         {view === 'home' && renderHome()}
+        {view === 'history' && renderHistory()}
+        {view === 'profile' && renderProfile()}
         {view === 'pricing' && renderPricing()}
         {view === 'payment' && selectedPack && (
           <StripeCheckout tokens={selectedPack.tokens} amount={selectedPack.price} label={selectedPack.label} onCancel={() => setView('pricing')} />
         )}
       </main>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-bg-cool" />}>
+      <PageContent />
+    </Suspense>
   );
 }

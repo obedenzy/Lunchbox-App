@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { UserProfile } from "../../../types";
 
 const RUNWARE_API_KEY = process.env.RUNWARE_API_KEY;
+const RUNWARE_MODEL = process.env.RUNWARE_MODEL || "runware:100@1";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3-pro-preview";
 
 async function generateRunwareImage(mealName: string, ingredients: string[], snack: string): Promise<string> {
   const taskUUID = crypto.randomUUID();
@@ -22,7 +24,7 @@ Snack: ${snack}`;
         {
           "taskType": "imageInference",
           "taskUUID": taskUUID,
-          "model": "runware:100@1",
+          "model": RUNWARE_MODEL,
           "positivePrompt": prompt,
           "width": 1024,
           "height": 1024,
@@ -91,7 +93,7 @@ export async function POST(req: Request) {
     };
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: GEMINI_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",

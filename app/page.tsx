@@ -373,6 +373,12 @@ function PageContent() {
               >
                 <UserIcon className="w-6 h-6" />
               </div>
+              <button 
+                onClick={handleLogout}
+                className="hidden md:block text-[10px] font-black text-navy/30 hover:text-primary uppercase tracking-widest transition-colors"
+              >
+                Sign Out
+              </button>
             </div>
           )}
           
@@ -392,13 +398,57 @@ function PageContent() {
         )}
       </main>
 
-      <footer className="bg-navy py-20 no-print">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-10">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary text-white rounded-xl"><AppleIcon /></div>
-            <span className="text-xl font-black text-white tracking-tighter">BentoMagic</span>
+      <footer className="bg-navy py-24 md:py-40 no-print mt-auto">
+        <div className="max-w-7xl mx-auto px-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-20">
+          <div className="space-y-10">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-primary text-white rounded-xl shadow-2xl shadow-primary/20"><AppleIcon /></div>
+              <span className="text-2xl font-black text-white tracking-tighter">BentoMagic</span>
+            </div>
+            <p className="text-white/30 font-bold leading-relaxed text-sm uppercase tracking-widest">
+              Designing the future of family mealtime through intelligence. Wholesome ideas for growing kids.
+            </p>
           </div>
-          <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em]">© {new Date().getFullYear()} BentoMagic Intelligence Studio</p>
+          
+          <div className="space-y-10">
+            <h4 className="font-black text-white/20 tracking-[0.3em] text-[10px] uppercase">Product</h4>
+            <ul className="space-y-6 text-xs font-black tracking-widest uppercase text-white/60">
+              <li><button onClick={() => navigateTo('home')} className="hover:text-primary transition-colors">Generator</button></li>
+              <li><button onClick={() => navigateTo('pricing')} className="hover:text-primary transition-colors">Pricing</button></li>
+              <li><button onClick={() => navigateTo('history')} className="hover:text-primary transition-colors">History</button></li>
+            </ul>
+          </div>
+
+          <div className="space-y-10">
+            <h4 className="font-black text-white/20 tracking-[0.3em] text-[10px] uppercase">Company</h4>
+            <ul className="space-y-6 text-xs font-black tracking-widest uppercase text-white/60">
+              <li><button className="hover:text-primary transition-colors">About Magic</button></li>
+              <li><button className="hover:text-primary transition-colors">Methodology</button></li>
+              <li><button className="hover:text-primary transition-colors">Privacy</button></li>
+            </ul>
+          </div>
+
+          <div className="space-y-10">
+            <h4 className="font-black text-white/20 tracking-[0.3em] text-[10px] uppercase">Intelligence</h4>
+            <div className="space-y-6">
+              <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
+                 <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Model Engine</p>
+                 <p className="text-xs text-white/60 font-black tracking-tight uppercase">gemini-3-pro-preview</p>
+              </div>
+              <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
+                 <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Visual Studio</p>
+                 <p className="text-xs text-white/60 font-black tracking-tight uppercase">runware:100@1</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-10 border-t border-white/5 mt-32 pt-12 flex flex-col md:flex-row justify-between items-center gap-8">
+           <p className="text-white/10 text-[10px] font-black tracking-[0.3em] uppercase">© {new Date().getFullYear()} BentoMagic Intelligence Studio</p>
+           <div className="flex gap-10 text-[10px] font-black tracking-[0.3em] uppercase text-white/10">
+              <button className="hover:text-white transition-colors">Status</button>
+              <button className="hover:text-white transition-colors">API</button>
+           </div>
         </div>
       </footer>
     </div>

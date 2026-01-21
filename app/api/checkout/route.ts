@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2025-01-27-preview" as any,
+  apiVersion: "2024-12-18.preview" as any,
 });
 
 export async function POST(req: Request) {
   try {
     const { tokens, amount, label } = await req.json();
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error("STRIPE_SECRET_KEY is not configured on the server.");
+    }
 
     const session = await stripe.checkout.sessions.create({
       ui_mode: "embedded",

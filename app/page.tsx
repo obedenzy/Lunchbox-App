@@ -7,7 +7,7 @@ import { InputForm } from '../components/InputForm';
 import { LunchCard } from '../components/LunchCard';
 import { AuthForm } from '../components/AuthForm';
 import { StripeCheckout } from '../components/StripeCheckout';
-import { AppleIcon, PrintIcon, UserIcon, LoadingIcon, CheckIcon } from '../components/Icons';
+import { AppleIcon, PrintIcon, UserIcon, LoadingIcon, CheckIcon, CreditCardIcon } from '../components/Icons';
 
 type View = 'home' | 'history' | 'profile' | 'pricing' | 'payment' | 'nutrition' | 'contact';
 
@@ -38,6 +38,13 @@ function PageContent() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedPack, setSelectedPack] = useState<TokenPack | null>(null);
 
+  // Profile Edit States
+  const [editName, setEditName] = useState('');
+  const [defaultAge, setDefaultAge] = useState(6);
+  const [defaultDiet, setDefaultDiet] = useState<'Omnivore' | 'Vegetarian' | 'Vegan'>('Omnivore');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
   useEffect(() => {
     setMounted(true);
     const savedHistory = localStorage.getItem('bento_history');
@@ -45,7 +52,13 @@ function PageContent() {
     
     const loadUser = () => {
       const savedUser = localStorage.getItem('bento_user');
-      if (savedUser) setUser(JSON.parse(savedUser));
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+        setEditName(parsedUser.name);
+        setDefaultAge(parsedUser.defaultSettings?.childAge || 6);
+        setDefaultDiet(parsedUser.defaultSettings?.dietType || 'Omnivore');
+      }
     };
     
     loadUser();
@@ -56,7 +69,7 @@ function PageContent() {
     
     if (viewParam) setView(viewParam);
     if (paymentParam === 'success') {
-      loadUser(); // Reload user to get updated tokens
+      loadUser();
       setToast({ message: "Credits updated successfully!", type: 'success' });
     }
   }, [searchParams]);
@@ -90,6 +103,8 @@ function PageContent() {
       stats: { totalPlansGenerated: 0, joinedDate: new Date().toLocaleDateString() }
     };
     setUser(mockUser);
+    setEditName(mockUser.name);
+    setToast({ message: "Welcome back!", type: 'success' });
   };
 
   const handleSignup = (name: string, email: string, pass: string) => {
@@ -100,6 +115,8 @@ function PageContent() {
       stats: { totalPlansGenerated: 0, joinedDate: new Date().toLocaleDateString() }
     };
     setUser(newUser);
+    setEditName(newUser.name);
+    setToast({ message: "Welcome to BentoMagic!", type: 'success' });
   };
 
   const handleLogout = () => {
@@ -107,6 +124,29 @@ function PageContent() {
     localStorage.removeItem('bento_user');
     setPlan(null);
     setView('home');
+    setToast({ message: "Logged out successfully", type: 'success' });
+  };
+
+  const handleUpdateProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setUser({ 
+      ...user, 
+      name: editName,
+      defaultSettings: { childAge: defaultAge, dietType: defaultDiet }
+    });
+    setToast({ message: "Profile and settings updated!", type: 'success' });
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setToast({ message: "Passwords do not match!", type: 'error' });
+      return;
+    }
+    setToast({ message: "Password updated successfully!", type: 'success' });
+    setNewPassword('');
+    setConfirmPassword('');
   };
 
   const handleGenerate = async (profile: UserProfile) => {
@@ -154,7 +194,7 @@ function PageContent() {
         <p className="text-navy/40 font-bold tracking-widest text-xs uppercase">Wholesome ideas tailored for growing kids.</p>
       </header>
       <section className="max-w-4xl mx-auto">
-        {!user ? <AuthForm onLogin={handleLogin} onSignup={handleSignup} /> : <InputForm onSubmit={handleGenerate} isLoading={loading} />}
+        {!user ? <AuthForm onLogin={handleLogin} onSignup={handleSignup} /> : <InputForm onSubmit={handleGenerate} isLoading={loading} initialProfile={user.defaultSettings ? { age: user.defaultSettings.childAge, dietType: user.defaultSettings.dietType, allergies: [], preferences: '', targetWeek: '' } : null} />}
         {error && <div className="mt-8 p-6 bg-primary/10 text-primary-dark rounded-2xl text-center font-black">{error}</div>}
       </section>
       {loading && <div className="py-24 text-center space-y-4"><div className="w-16 h-16 border-4 border-navy/5 border-t-primary rounded-full animate-spin mx-auto"></div><p className="text-navy/40 font-black uppercase text-xs">Generating Plan...</p></div>}
@@ -170,12 +210,12 @@ function PageContent() {
 
   const renderHistory = () => (
     <div className="max-w-6xl mx-auto px-4 space-y-12">
-      <h2 className="text-5xl font-black text-navy text-left">Your History</h2>
+      <h2 className="text-5xl font-black text-navy text-left tracking-tight">Your History</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
         {history.map(h => (
-          <div key={h.id} className="bg-white p-8 rounded-[2rem] border-4 border-navy/5 cursor-pointer hover:border-primary/20 transition-all" onClick={() => { setPlan(h); setView('home'); }}>
-            <span className="text-[10px] font-black text-primary uppercase">{h.weekLabel}</span>
-            <h4 className="text-xl font-black mt-2">{h.Monday.name}</h4>
+          <div key={h.id} className="bg-white p-8 rounded-[2rem] border-4 border-navy/5 cursor-pointer hover:border-primary/20 transition-all shadow-xl shadow-navy/5" onClick={() => { setPlan(h); setView('home'); }}>
+            <span className="text-[10px] font-black text-primary uppercase tracking-widest">{h.weekLabel}</span>
+            <h4 className="text-xl font-black mt-2 text-navy">{h.Monday.name}</h4>
           </div>
         ))}
       </div>
@@ -183,21 +223,102 @@ function PageContent() {
   );
 
   const renderProfile = () => (
-    <div className="max-w-4xl mx-auto px-4">
-      <div className="bg-white p-12 rounded-[3rem] border-4 border-navy/5 shadow-2xl text-left space-y-8">
-        <div className="flex items-center gap-8 border-b-4 border-bg-cool pb-8">
-          <div className="w-20 h-20 bg-primary text-white rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/20"><UserIcon className="w-10 h-10" /></div>
-          <div>
-            <h2 className="text-4xl font-black text-navy">{user?.name}</h2>
-            <p className="text-navy/40 font-black uppercase text-[10px]">{user?.email}</p>
+    <div className="max-w-4xl mx-auto px-4 space-y-12">
+      <div className="bg-white p-12 rounded-[3rem] border-4 border-navy/5 shadow-2xl text-left space-y-12">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b-4 border-bg-cool pb-12">
+          <div className="flex items-center gap-8">
+            <div className="w-24 h-24 bg-primary text-white rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/20"><UserIcon className="w-12 h-12" /></div>
+            <div>
+              <h2 className="text-4xl font-black text-navy tracking-tight">{user?.name}</h2>
+              <p className="text-navy/40 font-black uppercase tracking-widest text-[10px]">{user?.email}</p>
+            </div>
+          </div>
+          <div className="bg-navy px-8 py-6 rounded-3xl shadow-2xl shadow-navy/20 text-center md:text-right">
+             <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">Available Credits</p>
+             <p className="text-3xl font-black text-white">{user?.tokens} <span className="text-sm text-primary">Tokens</span></p>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-bg-cool p-8 rounded-2xl">
-            <p className="text-[10px] font-black text-navy/40 uppercase mb-2">Available Credits</p>
-            <p className="text-4xl font-black text-navy">{user?.tokens} Tokens</p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Account Settings */}
+          <div className="space-y-10">
+            <h3 className="text-xl font-black text-navy tracking-tight flex items-center gap-3">
+              <div className="w-2 h-8 bg-primary rounded-full" />
+              Account Settings
+            </h3>
+            <form onSubmit={handleUpdateProfile} className="space-y-6">
+              <div>
+                <label className="text-[10px] font-black text-navy/40 tracking-widest uppercase block mb-3 ml-2">Display Name</label>
+                <input 
+                  type="text" 
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full p-5 bg-bg-cool border-2 border-transparent rounded-2xl focus:border-primary focus:bg-white focus:outline-none font-black text-navy"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black text-navy/40 tracking-widest uppercase block mb-3 ml-2">Default Age</label>
+                  <select 
+                    value={defaultAge}
+                    onChange={(e) => setDefaultAge(parseInt(e.target.value))}
+                    className="w-full p-5 bg-bg-cool border-2 border-transparent rounded-2xl focus:border-primary focus:bg-white focus:outline-none font-black text-navy appearance-none"
+                  >
+                    {Array.from({length: 17}, (_, i) => i + 2).map(v => <option key={v} value={v}>{v}y</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-navy/40 tracking-widest uppercase block mb-3 ml-2">Default Diet</label>
+                  <select 
+                    value={defaultDiet}
+                    onChange={(e) => setDefaultDiet(e.target.value as any)}
+                    className="w-full p-5 bg-bg-cool border-2 border-transparent rounded-2xl focus:border-primary focus:bg-white focus:outline-none font-black text-navy appearance-none"
+                  >
+                    <option value="Omnivore">Omnivore</option>
+                    <option value="Vegetarian">Vegetarian</option>
+                    <option value="Vegan">Vegan</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit" className="w-full bg-navy text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary transition-all shadow-xl">Update Settings</button>
+            </form>
           </div>
-          <button onClick={() => navigateTo('pricing')} className="bg-navy text-white p-8 rounded-2xl font-black uppercase text-xs hover:bg-primary transition-all">Buy More Credits</button>
+
+          {/* Security */}
+          <div className="space-y-10">
+            <h3 className="text-xl font-black text-navy tracking-tight flex items-center gap-3">
+              <div className="w-2 h-8 bg-secondary rounded-full" />
+              Security
+            </h3>
+            <form onSubmit={handleChangePassword} className="space-y-6">
+              <div>
+                <label className="text-[10px] font-black text-navy/40 tracking-widest uppercase block mb-3 ml-2">New Password</label>
+                <input 
+                  type="password" 
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full p-5 bg-bg-cool border-2 border-transparent rounded-2xl focus:border-primary focus:bg-white focus:outline-none font-black text-navy"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-navy/40 tracking-widest uppercase block mb-3 ml-2">Confirm New Password</label>
+                <input 
+                  type="password" 
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full p-5 bg-bg-cool border-2 border-transparent rounded-2xl focus:border-primary focus:bg-white focus:outline-none font-black text-navy"
+                />
+              </div>
+              <button type="submit" className="w-full border-4 border-navy/5 text-navy py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:border-primary transition-all">Update Password</button>
+            </form>
+          </div>
+        </div>
+
+        <div className="pt-12 border-t-4 border-bg-cool flex flex-col md:flex-row gap-6">
+           <button onClick={() => navigateTo('pricing')} className="flex-1 bg-primary text-white py-6 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary-dark transition-all shadow-2xl shadow-primary/20">Buy Tokens</button>
+           <button onClick={handleLogout} className="flex-1 border-4 border-primary text-primary py-6 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary hover:text-white transition-all">Sign Out</button>
         </div>
       </div>
     </div>
@@ -205,14 +326,15 @@ function PageContent() {
 
   const renderPricing = () => (
     <div className="max-w-6xl mx-auto px-4 space-y-20">
-      <h2 className="text-6xl font-black text-navy text-center">Fuel Your Planning</h2>
+      <h2 className="text-6xl md:text-7xl font-black text-navy text-center tracking-tight leading-none">Fuel Your<br/>Planning</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {TOKEN_PACKS.map(pack => (
-          <div key={pack.priceId} className={`bg-white p-12 rounded-[3rem] border-4 text-center space-y-8 ${pack.popular ? 'border-primary shadow-2xl scale-105' : 'border-navy/5'}`}>
-            <div className="text-6xl">{pack.icon}</div>
-            <h3 className="text-2xl font-black">{pack.label}</h3>
-            <div className="text-4xl font-black text-primary">{pack.price}</div>
-            <button onClick={() => { setSelectedPack(pack); setView('payment'); }} className="w-full bg-navy text-white py-4 rounded-2xl font-black uppercase tracking-widest">Select</button>
+          <div key={pack.priceId} className={`bg-white p-12 rounded-[3rem] border-4 text-center space-y-8 transition-all ${pack.popular ? 'border-primary shadow-2xl scale-105 z-10' : 'border-navy/5 hover:border-primary/20 shadow-xl'}`}>
+            <div className="text-7xl">{pack.icon}</div>
+            <h3 className="text-2xl font-black text-navy">{pack.label}</h3>
+            <div className="text-5xl font-black text-primary tracking-tight">{pack.price}</div>
+            <p className="text-[10px] font-black text-navy/30 uppercase tracking-[0.2em]">{pack.tokens} Generation Credits</p>
+            <button onClick={() => { setSelectedPack(pack); setView('payment'); }} className="w-full bg-navy text-white py-6 rounded-2xl font-black uppercase tracking-widest hover:bg-primary transition-all shadow-xl">Select Pack</button>
           </div>
         ))}
       </div>
@@ -222,30 +344,45 @@ function PageContent() {
   return (
     <div className="min-h-screen flex flex-col bg-bg-cool">
       {toast && (
-        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[200] px-10 py-5 rounded-3xl shadow-2xl font-black bg-white border-4 border-primary text-primary">
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[200] px-10 py-5 rounded-3xl shadow-2xl font-black bg-white border-4 border-primary text-primary animate-in slide-in-from-top-12">
           {toast.message}
         </div>
       )}
-      <nav className="sticky top-0 z-[100] bg-white/95 backdrop-blur-3xl border-b-4 border-navy/5 h-24 flex items-center justify-between px-10">
-        <div className="flex items-center gap-4 cursor-pointer" onClick={() => navigateTo('home')}>
-          <div className="p-3 bg-primary text-white rounded-2xl shadow-xl"><AppleIcon /></div>
-          <span className="text-2xl font-black text-navy">BentoMagic</span>
+      <nav className="sticky top-0 z-[100] bg-white/95 backdrop-blur-3xl border-b-4 border-navy/5 h-24 flex items-center justify-between px-6 md:px-12 no-print">
+        <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigateTo('home')}>
+          <div className="p-3 bg-primary text-white rounded-2xl shadow-xl group-hover:rotate-12 transition-transform"><AppleIcon /></div>
+          <span className="text-2xl font-black text-navy tracking-tighter">BentoMagic</span>
         </div>
-        <div className="flex items-center gap-6 md:gap-8 font-black text-[10px] uppercase tracking-widest text-navy/40">
-          <button onClick={() => navigateTo('home')} className={view === 'home' ? 'text-primary' : ''}>Home</button>
-          <button onClick={() => navigateTo('pricing')} className={view === 'pricing' ? 'text-primary' : ''}>Pricing</button>
+        
+        <div className="flex items-center gap-4 md:gap-10">
+          <div className="hidden md:flex items-center gap-10 font-black text-[10px] uppercase tracking-widest text-navy/40">
+            <button onClick={() => navigateTo('home')} className={`hover:text-primary transition-colors ${view === 'home' ? 'text-primary' : ''}`}>Home</button>
+            <button onClick={() => navigateTo('pricing')} className={`hover:text-primary transition-colors ${view === 'pricing' ? 'text-primary' : ''}`}>Pricing</button>
+            {user && <button onClick={() => navigateTo('history')} className={`hover:text-primary transition-colors ${view === 'history' ? 'text-primary' : ''}`}>History</button>}
+          </div>
+          
           {user && (
-            <>
-              <button onClick={() => navigateTo('history')} className={view === 'history' ? 'text-primary' : ''}>History</button>
-              <div onClick={() => navigateTo('profile')} className={`w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer transition-all border-2 ${view === 'profile' ? 'bg-primary text-white border-primary' : 'bg-bg-cool text-navy border-transparent hover:border-primary/20'}`}>
+            <div className="flex items-center gap-3 md:gap-6 border-l-4 border-bg-cool pl-3 md:pl-10">
+              <div onClick={() => navigateTo('pricing')} className="flex items-center gap-3 bg-navy text-white px-5 py-3 rounded-2xl shadow-xl hover:bg-primary transition-all cursor-pointer group">
+                 <span className="text-xs font-black">{user.tokens}</span>
+                 <div className="w-5 h-5 bg-white/20 rounded-lg flex items-center justify-center text-[10px] font-black group-hover:rotate-90 transition-transform">+</div>
+              </div>
+              <div 
+                onClick={() => navigateTo('profile')} 
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center cursor-pointer transition-all border-4 ${view === 'profile' ? 'bg-primary text-white border-primary shadow-2xl shadow-primary/20' : 'bg-bg-cool text-navy border-transparent hover:border-primary/20'}`}
+              >
                 <UserIcon className="w-6 h-6" />
               </div>
-              <button onClick={handleLogout}>Logout</button>
-            </>
+            </div>
+          )}
+          
+          {!user && (
+             <button onClick={() => navigateTo('home')} className="bg-navy text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-primary transition-all shadow-xl">Get Started</button>
           )}
         </div>
       </nav>
-      <main className="flex-1 pb-32 pt-12">
+      
+      <main className="flex-1 pb-32 pt-12 md:pt-20">
         {view === 'home' && renderHome()}
         {view === 'history' && renderHistory()}
         {view === 'profile' && renderProfile()}
@@ -254,13 +391,23 @@ function PageContent() {
           <StripeCheckout tokens={selectedPack.tokens} amount={selectedPack.price} label={selectedPack.label} onCancel={() => setView('pricing')} />
         )}
       </main>
+
+      <footer className="bg-navy py-20 no-print">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-10">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary text-white rounded-xl"><AppleIcon /></div>
+            <span className="text-xl font-black text-white tracking-tighter">BentoMagic</span>
+          </div>
+          <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em]">© {new Date().getFullYear()} BentoMagic Intelligence Studio</p>
+        </div>
+      </footer>
     </div>
   );
 }
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-bg-cool" />}>
+    <Suspense fallback={<div className="min-h-screen bg-bg-cool flex items-center justify-center"><LoadingIcon /></div>}>
       <PageContent />
     </Suspense>
   );

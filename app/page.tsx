@@ -149,6 +149,20 @@ function PageContent() {
     setConfirmPassword('');
   };
 
+  const toggleSavePlan = (planId: string) => {
+    if (!user) return;
+    const currentSaved = user.savedPlans || [];
+    const isSaved = currentSaved.includes(planId);
+    const newSaved = isSaved ? currentSaved.filter(id => id !== planId) : [...currentSaved, planId];
+    setUser({ ...user, savedPlans: newSaved });
+    setToast({ 
+      message: isSaved ? "Plan removed from profile" : "Plan saved to profile!", 
+      type: 'success' 
+    });
+  };
+
+  const isPlanSaved = (planId: string) => user?.savedPlans?.includes(planId) || false;
+
   const handleGenerate = async (profile: UserProfile) => {
     if (!user || user.tokens <= 0) {
       setError("Insufficient tokens.");
@@ -175,6 +189,7 @@ function PageContent() {
       setPlan(generatedPlan);
       setHistory(prev => [generatedPlan, ...prev]);
       setUser(prev => prev ? ({ ...prev, tokens: prev.tokens - 1 }) : null);
+      setToast({ message: "New plan generated successfully!", type: 'success' });
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -197,12 +212,56 @@ function PageContent() {
         {!user ? <AuthForm onLogin={handleLogin} onSignup={handleSignup} /> : <InputForm onSubmit={handleGenerate} isLoading={loading} initialProfile={user.defaultSettings ? { age: user.defaultSettings.childAge, dietType: user.defaultSettings.dietType, allergies: [], preferences: '', targetWeek: '' } : null} />}
         {error && <div className="mt-8 p-6 bg-primary/10 text-primary-dark rounded-2xl text-center font-black">{error}</div>}
       </section>
-      {loading && <div className="py-24 text-center space-y-4"><div className="w-16 h-16 border-4 border-navy/5 border-t-primary rounded-full animate-spin mx-auto"></div><p className="text-navy/40 font-black uppercase text-xs">Generating Plan...</p></div>}
+      
+      {loading && (
+        <div className="py-24 text-center space-y-6">
+          <div className="w-16 h-16 border-8 border-navy/5 border-t-primary rounded-full animate-spin mx-auto"></div>
+          <p className="text-navy/40 font-black uppercase text-xs tracking-[0.2em]">Crafting your magical menu...</p>
+        </div>
+      )}
+
       {plan && !loading && (
-        <div className="flex flex-col gap-12 md:gap-24 pb-20 max-w-6xl mx-auto">
-          {(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const).map(day => (
-            <LunchCard key={day} day={day} data={plan[day]} />
-          ))}
+        <div className="space-y-12 md:space-y-24 max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-12 duration-1000">
+          {/* Result Section Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 no-print border-b-8 border-navy/5 pb-12">
+            <div className="text-left">
+              <p className="text-primary font-black text-[10px] tracking-[0.3em] uppercase mb-2">Selected Schedule</p>
+              <h2 className="text-4xl md:text-6xl font-black text-navy tracking-tight">{plan.weekLabel}</h2>
+              <p className="text-navy/30 font-bold text-xs mt-3 uppercase tracking-widest">
+                Generated {new Date(plan.timestamp).toLocaleDateString()} for {plan.profile.age} Year Old
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-4 w-full md:w-auto">
+              <button 
+                onClick={() => toggleSavePlan(plan.id)}
+                className={`flex-1 md:flex-none flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black transition-all text-xs tracking-widest uppercase border-4 ${
+                  isPlanSaved(plan.id) 
+                    ? 'bg-primary text-white border-primary shadow-2xl shadow-primary/30' 
+                    : 'bg-white border-navy text-navy hover:bg-navy hover:text-white'
+                }`}
+              >
+                {isPlanSaved(plan.id) ? 'Saved' : 'Save to Profile'}
+              </button>
+              <button 
+                onClick={() => handleGenerate(plan.profile)}
+                className="flex-1 md:flex-none flex items-center justify-center gap-3 bg-secondary text-white px-8 py-4 rounded-2xl font-black text-xs tracking-widest uppercase hover:bg-secondary-dark transition-all shadow-2xl shadow-secondary/30"
+              >
+                Regenerate
+              </button>
+              <button 
+                onClick={() => window.print()}
+                className="flex-1 md:flex-none flex items-center justify-center gap-3 bg-navy text-white px-8 py-4 rounded-2xl font-black text-xs tracking-widest uppercase hover:bg-navy/90 transition-all shadow-xl"
+              >
+                <PrintIcon /> Print
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-12 md:gap-24 pb-20">
+            {(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const).map(day => (
+              <LunchCard key={day} day={day} data={plan[day]} />
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -210,15 +269,43 @@ function PageContent() {
 
   const renderHistory = () => (
     <div className="max-w-6xl mx-auto px-4 space-y-12">
-      <h2 className="text-5xl font-black text-navy text-left tracking-tight">Your History</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-        {history.map(h => (
-          <div key={h.id} className="bg-white p-8 rounded-[2rem] border-4 border-navy/5 cursor-pointer hover:border-primary/20 transition-all shadow-xl shadow-navy/5" onClick={() => { setPlan(h); setView('home'); }}>
-            <span className="text-[10px] font-black text-primary uppercase tracking-widest">{h.weekLabel}</span>
-            <h4 className="text-xl font-black mt-2 text-navy">{h.Monday.name}</h4>
-          </div>
-        ))}
+      <div className="flex justify-between items-center border-b-4 border-navy/5 pb-8">
+        <h2 className="text-5xl font-black text-navy tracking-tight">Your History</h2>
+        <div className="bg-bg-cool px-6 py-3 rounded-xl text-[10px] font-black text-navy/40 uppercase tracking-widest">
+          {history.length} Plans Generated
+        </div>
       </div>
+      
+      {history.length === 0 ? (
+        <div className="py-40 text-center bg-white rounded-[3rem] border-4 border-navy/5">
+          <p className="text-navy/20 font-black uppercase tracking-[0.3em] text-sm">No magic lunchboxes found.</p>
+          <button onClick={() => navigateTo('home')} className="mt-8 bg-navy text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary transition-all shadow-xl">Start Planning</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
+          {history.map(h => (
+            <div 
+              key={h.id} 
+              className={`bg-white p-10 rounded-[2.5rem] border-4 transition-all shadow-xl group cursor-pointer ${
+                isPlanSaved(h.id) ? 'border-primary shadow-primary/10' : 'border-navy/5 hover:border-primary/20'
+              }`} 
+              onClick={() => { setPlan(h); setView('home'); }}
+            >
+              <div className="flex justify-between items-start mb-6">
+                <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{h.weekLabel}</span>
+                {isPlanSaved(h.id) && (
+                  <div className="w-6 h-6 bg-primary text-white rounded-lg flex items-center justify-center text-[10px]">★</div>
+                )}
+              </div>
+              <h4 className="text-2xl font-black text-navy group-hover:text-primary transition-colors leading-tight mb-4">{h.Monday.name}</h4>
+              <div className="flex flex-wrap gap-2">
+                <span className="px-3 py-1 bg-bg-cool rounded-lg text-[9px] font-black text-navy/40 uppercase">{h.profile.age}Y</span>
+                <span className="px-3 py-1 bg-bg-cool rounded-lg text-[9px] font-black text-navy/40 uppercase">{h.profile.dietType}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -227,7 +314,7 @@ function PageContent() {
       <div className="bg-white p-12 rounded-[3rem] border-4 border-navy/5 shadow-2xl text-left space-y-12">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b-4 border-bg-cool pb-12">
           <div className="flex items-center gap-8">
-            <div className="w-24 h-24 bg-primary text-white rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/20"><UserIcon className="w-12 h-12" /></div>
+            <div className="w-24 h-24 bg-primary text-white rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/20 transition-transform hover:rotate-6"><UserIcon className="w-12 h-12" /></div>
             <div>
               <h2 className="text-4xl font-black text-navy tracking-tight">{user?.name}</h2>
               <p className="text-navy/40 font-black uppercase tracking-widest text-[10px]">{user?.email}</p>

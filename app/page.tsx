@@ -11,7 +11,7 @@ import { ChildManager } from '../components/ChildManager';
 import { LunchboxBuilder } from '../components/LunchboxBuilder';
 import { AppleIcon, PrintIcon, UserIcon, LoadingIcon, CreditCardIcon } from '../components/Icons';
 
-type View = 'home' | 'history' | 'profile' | 'pricing' | 'payment' | 'builder' | 'recipes' | 'faq' | 'about' | 'privacy';
+type View = 'home' | 'history' | 'profile' | 'pricing' | 'payment' | 'builder' | 'recipes' | 'faq' | 'about' | 'privacy' | 'status' | 'api';
 
 function PageContent() {
   const searchParams = useSearchParams();
@@ -24,6 +24,7 @@ function PageContent() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedChildId, setSelectedChildId] = useState<string | undefined>(undefined);
+  const [currentFormState, setCurrentFormState] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -33,9 +34,18 @@ function PageContent() {
     const loadUser = () => {
       const savedUser = localStorage.getItem('bento_user');
       if (savedUser) {
-        const parsed = JSON.parse(savedUser);
-        setUser(parsed);
-        if (parsed.children.length > 0) setSelectedChildId(parsed.children[0].id);
+        try {
+          const parsed = JSON.parse(savedUser);
+          // Ensure children exists to avoid runtime errors
+          if (!parsed.children) parsed.children = [];
+          
+          setUser(parsed);
+          if (parsed.children.length > 0) {
+            setSelectedChildId(parsed.children[0].id);
+          }
+        } catch (e) {
+          console.error("Failed to parse user from storage", e);
+        }
       }
     };
     loadUser();
@@ -104,7 +114,7 @@ function PageContent() {
       ) : (
         <div className="space-y-24 max-w-6xl mx-auto">
           <ChildManager 
-            children={user.children} 
+            children={user.children || []} 
             onUpdate={handleUpdateChildren} 
             onSelect={(c) => setSelectedChildId(c.id)}
             selectedChildId={selectedChildId}
@@ -124,14 +134,14 @@ function PageContent() {
           </div>
 
           <section className="max-w-4xl mx-auto">
-            <InputForm onSubmit={handleGenerate} isLoading={loading} initialProfile={selectedChildId ? { ...user.children.find(c => c.id === selectedChildId), targetWeek: '' } : null} />
+            <InputForm onSubmit={handleGenerate} isLoading={loading} initialProfile={selectedChildId ? { ...user.children?.find(c => c.id === selectedChildId), targetWeek: '' } : null} />
           </section>
 
           {plan && !loading && (
             <div className="space-y-12 md:space-y-24 animate-in fade-in slide-in-from-bottom-12 duration-1000">
                <div className="flex flex-col md:flex-row justify-between items-end gap-8 border-b-8 border-navy/5 pb-12">
                   <div className="text-left">
-                    <p className="text-primary font-black text-[10px] tracking-[0.3em] uppercase mb-2">Plan for {user.children.find(c => c.id === selectedChildId)?.name}</p>
+                    <p className="text-primary font-black text-[10px] tracking-[0.3em] uppercase mb-2">Plan for {user.children?.find(c => c.id === selectedChildId)?.name || 'Child'}</p>
                     <h2 className="text-[2.25rem] font-black text-navy tracking-tight">{plan.weekLabel}</h2>
                   </div>
                   <div className="flex gap-4">

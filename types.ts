@@ -1,4 +1,3 @@
-
 export type Allergy = 
   | 'Peanuts' 
   | 'Tree Nuts' 
@@ -10,6 +9,17 @@ export type Allergy =
   | 'Shellfish' 
   | 'Sesame'
   | 'Gluten-Free';
+
+export type DietType = 'Omnivore' | 'Vegetarian' | 'Vegan';
+
+export interface Child {
+  id: string;
+  name: string;
+  age: number;
+  allergies: string[];
+  dietType: DietType;
+  preferences: string;
+}
 
 export interface Macros {
   calories: number;
@@ -23,8 +33,24 @@ export interface IngredientInfo {
   benefit: string;
 }
 
+export interface LunchboxComponent {
+  id: string;
+  name: string;
+  type: 'main' | 'fruit' | 'veg' | 'snack' | 'treat' | 'drink';
+  tags: string[];
+  nutritionSummary?: string;
+}
+
 export interface LunchDay {
   name: string;
+  childId?: string;
+  components?: {
+    main?: LunchboxComponent;
+    produce?: LunchboxComponent;
+    snack?: LunchboxComponent;
+    treat?: LunchboxComponent;
+    drink?: LunchboxComponent;
+  };
   ingredients: IngredientInfo[];
   steps: string[];
   nutritionSummary: string;
@@ -39,27 +65,23 @@ export interface WeeklyPlan {
   id: string;
   timestamp: number;
   weekLabel: string;
-  profile: UserProfile; 
+  childId: string;
   Monday: LunchDay;
   Tuesday: LunchDay;
   Wednesday: LunchDay;
   Thursday: LunchDay;
   Friday: LunchDay;
-  Saturday: LunchDay;
-  Sunday: LunchDay;
+  Saturday?: LunchDay;
+  Sunday?: LunchDay;
 }
 
 export interface UserProfile {
   age: number;
   allergies: string[];
   preferences: string;
-  dietType: 'Omnivore' | 'Vegetarian' | 'Vegan';
+  dietType: DietType;
   targetWeek: string;
-}
-
-export interface UserStats {
-  totalPlansGenerated: number;
-  joinedDate: string;
+  childId?: string;
 }
 
 export interface User {
@@ -68,10 +90,10 @@ export interface User {
   email: string;
   tokens: number;
   isLoggedIn: boolean;
+  children: Child[];
   savedPlans?: string[]; 
   defaultSettings?: {
     childAge: number;
-    dietType: 'Omnivore' | 'Vegetarian' | 'Vegan';
+    dietType: DietType;
   };
-  stats?: UserStats;
 }

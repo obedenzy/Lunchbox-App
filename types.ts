@@ -12,15 +12,6 @@ export type Allergy =
 
 export type DietType = 'Omnivore' | 'Vegetarian' | 'Vegan';
 
-export interface Child {
-  id: string;
-  name: string;
-  age: number;
-  allergies: string[];
-  dietType: DietType;
-  preferences: string;
-}
-
 export interface Macros {
   calories: number;
   protein: number;
@@ -33,24 +24,8 @@ export interface IngredientInfo {
   benefit: string;
 }
 
-export interface LunchboxComponent {
-  id: string;
-  name: string;
-  type: 'main' | 'fruit' | 'veg' | 'snack' | 'treat' | 'drink';
-  tags: string[];
-  nutritionSummary?: string;
-}
-
 export interface LunchDay {
   name: string;
-  childId?: string;
-  components?: {
-    main?: LunchboxComponent;
-    produce?: LunchboxComponent;
-    snack?: LunchboxComponent;
-    treat?: LunchboxComponent;
-    drink?: LunchboxComponent;
-  };
   ingredients: IngredientInfo[];
   steps: string[];
   nutritionSummary: string;
@@ -65,7 +40,7 @@ export interface WeeklyPlan {
   id: string;
   timestamp: number;
   weekLabel: string;
-  childId: string;
+  profile: UserProfile;
   Monday: LunchDay;
   Tuesday: LunchDay;
   Wednesday: LunchDay;
@@ -81,7 +56,6 @@ export interface UserProfile {
   preferences: string;
   dietType: DietType;
   targetWeek: string;
-  childId?: string;
 }
 
 export interface User {
@@ -90,10 +64,13 @@ export interface User {
   email: string;
   tokens: number;
   isLoggedIn: boolean;
-  children: Child[];
   savedPlans?: string[]; 
   defaultSettings?: {
     childAge: number;
     dietType: DietType;
+  };
+  stats?: {
+    totalPlansGenerated: number;
+    joinedDate: string;
   };
 }

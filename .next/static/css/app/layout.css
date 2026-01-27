@@ -1634,6 +1634,9 @@ video {
   --tw-bg-opacity: 1;
   background-color: rgb(185 28 28 / var(--tw-bg-opacity, 1));
 }
+.hover\:bg-bg-cool\/50:hover {
+  background-color: rgb(240 244 248 / 0.5);
+}
 .hover\:text-navy:hover {
   --tw-text-opacity: 1;
   color: rgb(13 27 42 / var(--tw-text-opacity, 1));
@@ -1720,6 +1723,10 @@ video {
   background-color: rgb(13 27 42 / 0.95);
 }
 .group\/item:hover .group-hover\/item\:text-primary {
+  --tw-text-opacity: 1;
+  color: rgb(252 74 26 / var(--tw-text-opacity, 1));
+}
+.group:hover .group-hover\:text-primary {
   --tw-text-opacity: 1;
   color: rgb(252 74 26 / var(--tw-text-opacity, 1));
 }

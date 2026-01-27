@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Child, DietType, Allergy } from '../types';
-import { UserIcon, CheckIcon, AppleIcon } from './Icons';
+import { UserIcon, CheckIcon } from './Icons';
 
 interface ChildManagerProps {
   children: Child[];
@@ -139,20 +139,22 @@ export const ChildManager: React.FC<ChildManagerProps> = ({ children, onUpdate, 
                 ))}
               </div>
               
-              <div className="flex gap-2 bg-bg-cool p-2 rounded-2xl">
-                <select value={inputType} onChange={(e) => setInputType(e.target.value as any)} className="bg-navy text-white rounded-xl px-3 py-2 text-[10px] font-black uppercase outline-none">
-                  <option value="allergy">Allergy</option>
-                  <option value="ingredient">Ingredient</option>
-                </select>
-                <input 
-                  type="text" 
-                  value={customInput}
-                  onChange={(e) => setCustomInput(e.target.value)}
-                  placeholder="Add custom..."
-                  className="flex-1 bg-transparent px-3 font-black text-navy outline-none text-sm"
-                  onKeyPress={(e) => e.key === 'Enter' && addCustom()}
-                />
-                <button onClick={addCustom} className="bg-primary text-white px-6 rounded-xl font-black text-[10px] uppercase">Add</button>
+              <div className="flex flex-col sm:flex-row gap-2 bg-bg-cool p-2 rounded-2xl border-2 border-transparent focus-within:border-primary transition-all">
+                <div className="flex gap-2 flex-1">
+                  <select value={inputType} onChange={(e) => setInputType(e.target.value as any)} className="bg-navy text-white rounded-xl px-3 py-2 text-[10px] font-black uppercase outline-none">
+                    <option value="allergy">Allergy</option>
+                    <option value="ingredient">Ingredient</option>
+                  </select>
+                  <input 
+                    type="text" 
+                    value={customInput}
+                    onChange={(e) => setCustomInput(e.target.value)}
+                    placeholder="Add custom..."
+                    className="flex-1 bg-transparent px-3 font-black text-navy outline-none text-sm"
+                    onKeyPress={(e) => e.key === 'Enter' && addCustom()}
+                  />
+                </div>
+                <button onClick={addCustom} className="bg-primary text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase shadow-xl shadow-primary/20">Add</button>
               </div>
             </div>
 

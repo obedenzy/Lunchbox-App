@@ -57,8 +57,8 @@ export interface WeeklyPlan {
   Wednesday: LunchDay;
   Thursday: LunchDay;
   Friday: LunchDay;
-  Saturday?: LunchDay;
-  Sunday?: LunchDay;
+  Saturday: LunchDay;
+  Sunday: LunchDay;
 }
 
 export interface UserProfile {

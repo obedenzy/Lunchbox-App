@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { UserProfile, WeeklyPlan, User, Child } from '../types';
 import { InputForm } from '../components/InputForm';
 import { LunchCard } from '../components/LunchCard';
@@ -13,6 +13,7 @@ import { AppleIcon, PrintIcon, UserIcon, LoadingIcon, CheckIcon, CreditCardIcon 
 type View = 'home' | 'history' | 'profile' | 'pricing' | 'payment' | 'faq' | 'about' | 'privacy' | 'status' | 'api';
 
 function PageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -20,11 +21,16 @@ function PageContent() {
   const [history, setHistory] = useState<WeeklyPlan[]>([]);
   const [view, setView] = useState<View>('home');
   const [historyFilter, setHistoryFilter] = useState<'all' | 'saved' | 'not_saved'>('all');
-  const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedChildId, setSelectedChildId] = useState<string>('');
+  
+  // Profile robust states
+  const [profileName, setProfileName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -37,6 +43,8 @@ function PageContent() {
         const parsed = JSON.parse(savedUser);
         if (!parsed.children) parsed.children = [];
         setUser(parsed);
+        setProfileName(parsed.name || '');
+        setProfileEmail(parsed.email || '');
       }
     };
     loadUser();
@@ -62,13 +70,19 @@ function PageContent() {
 
   if (!mounted) return null;
 
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+  };
+
   const handleLogin = (email: string, pass: string) => {
     const mockUser: User = {
       id: Math.random().toString(36).substr(2, 9),
       name: 'Bento Parent', email, tokens: 10, isLoggedIn: true, children: [], savedPlans: [],
     };
     setUser(mockUser);
-    setToast({ message: "Welcome back!", type: 'success' });
+    setProfileName(mockUser.name);
+    setProfileEmail(mockUser.email);
+    showToast("Welcome to BentoMagic!");
   };
 
   const handleLogout = () => {
@@ -76,7 +90,37 @@ function PageContent() {
     localStorage.removeItem('bento_user');
     setPlan(null);
     setView('home');
-    setToast({ message: "Logged out successfully", type: 'success' });
+    showToast("Successfully logged out");
+  };
+
+  const handleDeleteAccount = () => {
+    if (window.confirm("Are you sure you want to delete your account? This action is permanent and will remove all saved plans and children.")) {
+      localStorage.removeItem('bento_user');
+      localStorage.removeItem('bento_history');
+      setUser(null);
+      setHistory([]);
+      setPlan(null);
+      setView('home');
+      showToast("Account deleted successfully", "error");
+    }
+  };
+
+  const handleUpdateProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setUser({ ...user, name: profileName, email: profileEmail });
+    showToast("Profile updated successfully");
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      showToast("Passwords do not match", "error");
+      return;
+    }
+    setNewPassword('');
+    setConfirmPassword('');
+    showToast("Password changed successfully");
   };
 
   const toggleSavePlan = (planId: string) => {
@@ -85,7 +129,7 @@ function PageContent() {
     const isSaved = currentSaved.includes(planId);
     const newSaved = isSaved ? currentSaved.filter(id => id !== planId) : [...currentSaved, planId];
     setUser({ ...user, savedPlans: newSaved });
-    setToast({ message: isSaved ? "Plan removed" : "Plan saved!", type: 'success' });
+    showToast(isSaved ? "Plan removed" : "Plan saved!");
   };
 
   const isPlanSaved = (planId: string) => user?.savedPlans?.includes(planId) || false;
@@ -112,8 +156,13 @@ function PageContent() {
       setPlan(generatedPlan);
       setHistory(prev => [generatedPlan, ...prev]);
       setUser(prev => prev ? ({ ...prev, tokens: prev.tokens - 1 }) : null);
-      setToast({ message: "Magic plan generated!", type: 'success' });
-    } catch (err: any) { setError(err.message); } finally { setLoading(false); }
+      showToast("Magic plan generated!");
+    } catch (err: any) { 
+      setError(err.message);
+      showToast("Generation failed", "error");
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const navigateTo = (v: View) => { setView(v); window.scrollTo({ top: 0, behavior: 'smooth' }); };
@@ -203,7 +252,7 @@ function PageContent() {
           </div>
         </div>
         
-        <div className="space-y-8">
+        <div className="space-y-12">
           {filteredHistory.length === 0 ? (
             <div className="py-20 text-center bg-white rounded-[3rem] border-4 border-navy/5">
               <p className="text-navy/20 font-black uppercase tracking-widest text-xs">No plans found in this category.</p>
@@ -229,38 +278,24 @@ function PageContent() {
                     <span className="px-3 py-1 bg-navy text-white rounded-lg text-[9px] font-black uppercase">{h.profile.age} Years</span>
                     <span className="px-3 py-1 bg-secondary text-white rounded-lg text-[9px] font-black uppercase">{h.profile.dietType}</span>
                   </div>
-                  <div className="flex gap-4 pt-4">
-                    <button 
-                      onClick={() => { setPlan(h); navigateTo('home'); }}
-                      className="bg-navy text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary transition-all shadow-xl"
-                    >
-                      Load Plan
-                    </button>
-                    <button 
-                      onClick={() => setExpandedHistoryId(expandedHistoryId === h.id ? null : h.id)}
-                      className="bg-bg-cool text-navy px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white hover:shadow-lg transition-all"
-                    >
-                      {expandedHistoryId === h.id ? 'Hide Daily' : 'Show Daily'}
-                    </button>
-                  </div>
+                  <button 
+                    onClick={() => { setPlan(h); navigateTo('home'); }}
+                    className="w-full bg-navy text-white px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary transition-all shadow-xl"
+                  >
+                    Load Plan
+                  </button>
                 </div>
                 
                 <div className="lg:col-span-8">
-                  {expandedHistoryId === h.id ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in zoom-in duration-500">
-                      {(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const).map(day => (
-                        <div key={day} className="bg-bg-cool/50 p-6 rounded-2xl border-2 border-white shadow-xl text-left">
-                           <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{day}</p>
-                           <h5 className="text-sm font-black text-navy line-clamp-1 mb-2">{h[day].name}</h5>
-                           <p className="text-[10px] font-bold text-navy/40 line-clamp-2 leading-relaxed">{h[day].kidBenefit}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-full bg-bg-cool/30 rounded-[2rem] border-4 border-dashed border-navy/5">
-                       <p className="text-[10px] font-black text-navy/10 uppercase tracking-widest">Click show daily to see full menu snippet</p>
-                    </div>
-                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const).map(day => (
+                      <div key={day} className="bg-bg-cool/50 p-6 rounded-2xl border-2 border-white shadow-xl text-left hover:border-primary/20 transition-all">
+                         <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{day}</p>
+                         <h5 className="text-sm font-black text-navy line-clamp-1 mb-2">{h[day].name}</h5>
+                         <p className="text-[10px] font-bold text-navy/40 line-clamp-2 leading-relaxed">{h[day].kidBenefit}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -272,39 +307,126 @@ function PageContent() {
 
   const renderProfile = () => (
     <div className="max-w-6xl mx-auto px-4 space-y-12">
-      <div className="bg-white p-12 rounded-[3rem] border-4 border-navy/5 shadow-2xl text-left space-y-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b-4 border-bg-cool pb-12">
-          <div className="flex items-center gap-8">
-            <div className="w-24 h-24 bg-primary text-white rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/20"><UserIcon className="w-12 h-12" /></div>
-            <div>
-              <h2 className="text-4xl font-black text-navy tracking-tight">{user?.name}</h2>
-              <p className="text-navy/40 font-black uppercase tracking-widest text-[10px]">{user?.email}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Sidebar */}
+        <div className="lg:col-span-4 space-y-8">
+          <div className="bg-white p-12 rounded-[3rem] border-4 border-navy/5 shadow-2xl text-center">
+            <div className="w-24 h-24 bg-primary text-white rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/20 mx-auto mb-8"><UserIcon className="w-12 h-12" /></div>
+            <h2 className="text-3xl font-black text-navy tracking-tight">{user?.name}</h2>
+            <p className="text-navy/40 font-black uppercase tracking-widest text-[10px] mt-2">{user?.email}</p>
+            <div className="mt-8 pt-8 border-t-4 border-bg-cool">
+               <p className="text-[10px] font-black text-navy/40 uppercase tracking-[0.2em] mb-2">Available Balance</p>
+               <p className="text-4xl font-black text-navy">{user?.tokens} <span className="text-sm text-primary">Credits</span></p>
+               <button onClick={() => navigateTo('pricing')} className="mt-6 w-full bg-navy text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-primary transition-all shadow-xl">Top Up Tokens</button>
             </div>
           </div>
-          <div className="bg-navy px-8 py-6 rounded-3xl shadow-2xl shadow-navy/20 text-center md:text-right">
-             <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">Available Credits</p>
-             <p className="text-3xl font-black text-white">{user?.tokens} <span className="text-sm text-primary">Tokens</span></p>
+
+          <div className="bg-white p-12 rounded-[3rem] border-4 border-navy/5 shadow-2xl">
+            <h3 className="text-xl font-black text-navy mb-8 border-b-4 border-bg-cool pb-4">Activity Stats</h3>
+            <div className="space-y-6">
+               <div className="flex justify-between items-center">
+                 <span className="text-[10px] font-black text-navy/30 uppercase tracking-widest">Saved Plans</span>
+                 <span className="text-xl font-black text-navy">{user?.savedPlans?.length || 0}</span>
+               </div>
+               <div className="flex justify-between items-center">
+                 <span className="text-[10px] font-black text-navy/30 uppercase tracking-widest">Children</span>
+                 <span className="text-xl font-black text-navy">{user?.children?.length || 0}</span>
+               </div>
+               <div className="flex justify-between items-center">
+                 <span className="text-[10px] font-black text-navy/30 uppercase tracking-widest">Total Generations</span>
+                 <span className="text-xl font-black text-navy">{history.length}</span>
+               </div>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-12">
+        {/* Main Content */}
+        <div className="lg:col-span-8 space-y-8">
           <ChildManager 
             children={user?.children || []} 
             onUpdate={(children) => setUser(prev => prev ? ({ ...prev, children }) : null)} 
             onSelect={setSelectedChildId}
             selectedChildId={selectedChildId}
           />
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pt-12 border-t-4 border-bg-cool">
-          <div className="space-y-10">
-            <h3 className="text-xl font-black text-navy tracking-tight flex items-center gap-3">
-              <div className="w-2 h-8 bg-primary rounded-full" />
-              Account Settings
-            </h3>
-            <div className="space-y-4">
-              <p className="text-sm font-bold text-navy/60">Display Name: <span className="text-navy font-black">{user?.name}</span></p>
-              <button onClick={handleLogout} className="w-full bg-primary/10 text-primary border-4 border-primary/20 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary hover:text-white transition-all">Sign Out Now</button>
+          <div className="bg-white p-12 rounded-[3rem] border-4 border-navy/5 shadow-2xl text-left space-y-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div className="space-y-10">
+                <h3 className="text-xl font-black text-navy tracking-tight flex items-center gap-3">
+                  <div className="w-2 h-8 bg-primary rounded-full" />
+                  Profile Details
+                </h3>
+                <form onSubmit={handleUpdateProfile} className="space-y-6">
+                  <div>
+                    <label className="text-[10px] font-black text-navy/40 tracking-widest uppercase block mb-3 ml-2">Display Name</label>
+                    <input 
+                      type="text" 
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      className="w-full p-5 bg-bg-cool border-2 border-transparent rounded-2xl focus:border-primary focus:bg-white focus:outline-none font-black text-navy"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-navy/40 tracking-widest uppercase block mb-3 ml-2">Email Address</label>
+                    <input 
+                      type="email" 
+                      value={profileEmail}
+                      onChange={(e) => setProfileEmail(e.target.value)}
+                      className="w-full p-5 bg-bg-cool border-2 border-transparent rounded-2xl focus:border-primary focus:bg-white focus:outline-none font-black text-navy"
+                    />
+                  </div>
+                  <button type="submit" className="w-full bg-navy text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-primary transition-all shadow-xl">Save Changes</button>
+                </form>
+              </div>
+
+              <div className="space-y-10">
+                <h3 className="text-xl font-black text-navy tracking-tight flex items-center gap-3">
+                  <div className="w-2 h-8 bg-secondary rounded-full" />
+                  Update Password
+                </h3>
+                <form onSubmit={handleChangePassword} className="space-y-6">
+                  <div>
+                    <label className="text-[10px] font-black text-navy/40 tracking-widest uppercase block mb-3 ml-2">New Password</label>
+                    <input 
+                      type="password" 
+                      placeholder="••••••••"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full p-5 bg-bg-cool border-2 border-transparent rounded-2xl focus:border-primary focus:bg-white focus:outline-none font-black text-navy"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-navy/40 tracking-widest uppercase block mb-3 ml-2">Confirm Password</label>
+                    <input 
+                      type="password" 
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full p-5 bg-bg-cool border-2 border-transparent rounded-2xl focus:border-primary focus:bg-white focus:outline-none font-black text-navy"
+                    />
+                  </div>
+                  <button type="submit" className="w-full border-4 border-navy/5 text-navy py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:border-primary transition-all">Update Password</button>
+                </form>
+              </div>
+            </div>
+
+            <div className="pt-12 border-t-4 border-bg-cool space-y-8">
+              <h3 className="text-xl font-black text-navy tracking-tight flex items-center gap-3">
+                <div className="w-2 h-8 bg-red-600 rounded-full" />
+                Danger Zone
+              </h3>
+              <div className="p-8 bg-red-50 rounded-3xl border-2 border-red-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div>
+                   <h4 className="font-black text-red-600">Delete Account</h4>
+                   <p className="text-xs text-red-600/60 font-bold mt-1">Permanently remove your account and all associated data.</p>
+                </div>
+                <button 
+                  onClick={handleDeleteAccount}
+                  className="bg-red-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-red-700 transition-all shadow-xl shadow-red-600/20"
+                >
+                  Delete Permanently
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -325,7 +447,7 @@ function PageContent() {
           <span className="text-3xl font-black text-navy tracking-tighter">BentoMagic</span>
         </div>
         <div className="flex items-center gap-4 md:gap-10">
-          <div className="hidden md:flex items-center gap-10 font-black text-sm uppercase tracking-widest text-navy/40">
+          <div className="hidden md:flex items-center gap-10 font-black text-base uppercase tracking-widest text-navy/40">
             <button onClick={() => navigateTo('home')} className={`hover:text-primary transition-colors ${view === 'home' ? 'text-primary' : ''}`}>Planner</button>
             <button onClick={() => navigateTo('pricing')} className={`hover:text-primary transition-colors ${view === 'pricing' ? 'text-primary' : ''}`}>Pricing</button>
             {user && <button onClick={() => navigateTo('history')} className={`hover:text-primary transition-colors ${view === 'history' ? 'text-primary' : ''}`}>History</button>}
@@ -339,7 +461,7 @@ function PageContent() {
               <div onClick={() => navigateTo('profile')} className={`w-12 h-12 rounded-2xl flex items-center justify-center cursor-pointer transition-all border-4 ${view === 'profile' ? 'bg-primary text-white border-primary shadow-2xl shadow-primary/20' : 'bg-bg-cool text-navy border-transparent hover:border-primary/20'}`}><UserIcon className="w-6 h-6" /></div>
               <button 
                 onClick={handleLogout}
-                className="hidden md:flex items-center gap-2 text-xs font-black text-primary hover:text-primary-dark uppercase tracking-widest transition-colors ml-4"
+                className="hidden md:flex items-center gap-2 text-sm font-black text-primary hover:text-primary-dark uppercase tracking-widest transition-colors ml-4"
               >
                 Logout
               </button>

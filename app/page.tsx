@@ -12,6 +12,20 @@ import { AppleIcon, PrintIcon, UserIcon, LoadingIcon, CheckIcon, CreditCardIcon 
 
 type View = 'home' | 'history' | 'profile' | 'pricing' | 'payment' | 'faq' | 'about' | 'privacy' | 'status' | 'api';
 
+interface TokenPack {
+  tokens: number;
+  price: string;
+  label: string;
+  icon: string;
+  popular?: boolean;
+}
+
+const TOKEN_PACKS: TokenPack[] = [
+  { tokens: 5, price: '$4.99', label: 'Snack Pack', icon: '⚡' },
+  { tokens: 15, price: '$9.99', label: 'Bento Bundle', icon: '🍱', popular: true },
+  { tokens: 50, price: '$24.99', label: 'Master Chef', icon: '🏆' }
+];
+
 function PageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,6 +45,7 @@ function PageContent() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedChildId, setSelectedChildId] = useState<string>('');
+  const [selectedPack, setSelectedPack] = useState<TokenPack | null>(null);
   
   // Profile robust states
   const [profileName, setProfileName] = useState('');
@@ -57,6 +72,11 @@ function PageContent() {
 
     const viewParam = searchParams.get('view') as View;
     if (viewParam) setView(viewParam);
+
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success') {
+      showToast("Payment successful! Your credits have been added.");
+    }
   }, [searchParams]);
 
   useEffect(() => {
@@ -516,6 +536,72 @@ function PageContent() {
     </div>
   );
 
+  const renderPricing = () => (
+    <div className="max-w-6xl mx-auto px-4 space-y-20">
+      <div className="text-center space-y-6">
+        <h2 className="text-6xl md:text-8xl font-black text-navy tracking-tight leading-none">Fuel Your<br/>Planning</h2>
+        <p className="text-navy/40 font-black uppercase tracking-[0.2em] text-xs">Unlock professional lunch planning with generation credits.</p>
+      </div>
+
+      <div className="bg-white p-10 rounded-[3rem] border-4 border-navy/5 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="flex items-center gap-6">
+          <div className="w-16 h-16 bg-bg-cool rounded-2xl flex items-center justify-center text-3xl">🪙</div>
+          <div>
+            <h3 className="text-2xl font-black text-navy">Current Balance</h3>
+            <p className="text-navy/40 font-bold text-xs uppercase tracking-widest">Available to use right now</p>
+          </div>
+        </div>
+        <div className="text-5xl font-black text-primary">{user?.tokens || 0} <span className="text-sm text-navy/20 uppercase tracking-widest">Credits</span></div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {TOKEN_PACKS.map(pack => (
+          <div key={pack.label} className={`bg-white p-12 rounded-[3rem] border-4 text-center space-y-8 transition-all relative group flex flex-col ${pack.popular ? 'border-primary shadow-2xl scale-105 z-10' : 'border-navy/5 shadow-xl hover:border-primary/20'}`}>
+            {pack.popular && (
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-primary text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl">Best Value</div>
+            )}
+            <div className="text-7xl group-hover:scale-110 transition-transform">{pack.icon}</div>
+            <div className="flex-1 space-y-2">
+              <h3 className="text-2xl font-black text-navy">{pack.label}</h3>
+              <p className="text-navy/40 font-black uppercase tracking-widest text-[10px]">{pack.tokens} Magic Credits</p>
+            </div>
+            <div className="text-5xl font-black text-primary tracking-tight">{pack.price}</div>
+            <button 
+              onClick={() => { setSelectedPack(pack); navigateTo('payment'); }}
+              className="w-full bg-navy text-white py-6 rounded-2xl font-black uppercase tracking-widest hover:bg-primary transition-all shadow-xl group-hover:translate-y-[-4px]"
+            >
+              Get Credits
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-12">
+        <div className="bg-bg-cool/50 p-10 rounded-[2.5rem] border-4 border-white shadow-xl">
+           <h4 className="text-xl font-black text-navy mb-6 uppercase tracking-widest">Why Credits?</h4>
+           <ul className="space-y-4">
+              {[
+                "High-quality AI recipe generation",
+                "Hyper-realistic food photography",
+                "Allergy-safe personalized logic",
+                "Unlimited historical storage"
+              ].map(benefit => (
+                <li key={benefit} className="flex items-center gap-4 text-sm font-bold text-navy/60">
+                  <div className="w-5 h-5 bg-secondary text-white rounded-lg flex items-center justify-center text-[10px]"><CheckIcon /></div>
+                  {benefit}
+                </li>
+              ))}
+           </ul>
+        </div>
+        <div className="bg-navy p-10 rounded-[2.5rem] text-white shadow-2xl flex flex-col justify-center">
+           <p className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-4">Support Team</p>
+           <h4 className="text-2xl font-black mb-4 leading-tight">Need a custom plan for your school or organization?</h4>
+           <button className="text-[10px] font-black uppercase tracking-widest border-b-2 border-white/20 pb-1 self-start hover:border-primary transition-colors">Contact Enterprise Support</button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex flex-col bg-bg-cool">
       {toast && (
@@ -555,23 +641,19 @@ function PageContent() {
         {view === 'home' && renderHome()}
         {view === 'history' && renderHistory()}
         {view === 'profile' && renderProfile()}
-        {view === 'pricing' && (
-          <div className="max-w-6xl mx-auto px-4 space-y-20">
-             <h2 className="text-6xl md:text-7xl font-black text-navy text-center tracking-tight leading-none">Fuel Your<br/>Planning</h2>
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-               {[
-                 { tokens: 5, price: '$4.99', label: 'Snack Pack', icon: '⚡' },
-                 { tokens: 15, price: '$9.99', label: 'Bento Bundle', icon: '🍱', popular: true },
-                 { tokens: 50, price: '$24.99', label: 'Master Chef', icon: '🏆' }
-               ].map(pack => (
-                 <div key={pack.label} className={`bg-white p-12 rounded-[3rem] border-4 text-center space-y-8 transition-all ${pack.popular ? 'border-primary shadow-2xl scale-105 z-10' : 'border-navy/5 shadow-xl'}`}>
-                   <div className="text-7xl">{pack.icon}</div>
-                   <h3 className="text-2xl font-black text-navy">{pack.label}</h3>
-                   <div className="text-5xl font-black text-primary tracking-tight">{pack.price}</div>
-                   <button className="w-full bg-navy text-white py-6 rounded-2xl font-black uppercase tracking-widest hover:bg-primary transition-all">Select</button>
-                 </div>
-               ))}
+        {view === 'pricing' && renderPricing()}
+        {view === 'payment' && selectedPack && (
+          <div className="max-w-4xl mx-auto px-4">
+             <div className="text-center mb-12 space-y-4">
+               <h2 className="text-5xl font-black text-navy tracking-tight">Complete Purchase</h2>
+               <p className="text-navy/40 font-black uppercase text-xs tracking-widest">Secure checkout via Stripe</p>
              </div>
+             <StripeCheckout 
+               tokens={selectedPack.tokens} 
+               amount={selectedPack.price} 
+               label={selectedPack.label} 
+               onCancel={() => { setSelectedPack(null); navigateTo('pricing'); }} 
+             />
           </div>
         )}
       </main>

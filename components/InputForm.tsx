@@ -64,6 +64,14 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading, initi
     }
   }, [selectedChild, initialProfile]);
 
+  const toggleAllergy = (allergy: string) => {
+    setSelectedAllergies(prev => 
+      prev.includes(allergy) 
+        ? prev.filter(a => a !== allergy) 
+        : [...prev, allergy]
+    );
+  };
+
   const handleAddCustom = () => {
     const trimmed = customInput.trim();
     if (!trimmed) return;
@@ -78,8 +86,9 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading, initi
     setCustomInput('');
   };
 
-  const removeTag = (item: string, type: 'exclude' | 'available') => {
-    if (type === 'exclude') setExcludedIngredients(prev => prev.filter(i => i !== item));
+  const removeTag = (item: string, type: 'allergy' | 'exclude' | 'available') => {
+    if (type === 'allergy') setSelectedAllergies(prev => prev.filter(i => i !== item));
+    else if (type === 'exclude') setExcludedIngredients(prev => prev.filter(i => i !== item));
     else setAvailableIngredients(prev => prev.filter(i => i !== item));
   };
 
@@ -118,6 +127,20 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading, initi
         </div>
 
         <div>
+          <label className="block text-[10px] font-black text-navy/40 tracking-widest uppercase mb-4 ml-2">Common Allergies</label>
+          <div className="flex flex-wrap gap-2 mb-8">
+            {PREDEFINED_ALLERGIES.map(a => (
+              <button 
+                key={a}
+                type="button"
+                onClick={() => toggleAllergy(a)}
+                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border-2 transition-all ${selectedAllergies.includes(a) ? 'bg-primary border-primary text-white' : 'bg-bg-cool border-transparent text-navy/40'}`}
+              >
+                {a}
+              </button>
+            ))}
+          </div>
+
           <label className="block text-[10px] font-black text-navy/40 tracking-widest uppercase mb-4 ml-2">Personalize Ingredients</label>
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-3">
@@ -140,6 +163,11 @@ export const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading, initi
             </div>
 
             <div className="flex flex-wrap gap-2">
+              {selectedAllergies.filter(a => !PREDEFINED_ALLERGIES.includes(a as any)).map(item => (
+                <div key={item} className="bg-navy/10 text-navy px-4 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2">
+                  Allergy: {item} <button onClick={() => removeTag(item, 'allergy')} className="hover:text-navy/60">×</button>
+                </div>
+              ))}
               {excludedIngredients.map(item => (
                 <div key={item} className="bg-primary/10 text-primary px-4 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2">
                   No {item} <button onClick={() => removeTag(item, 'exclude')} className="hover:text-primary-dark">×</button>

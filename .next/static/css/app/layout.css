@@ -1109,6 +1109,9 @@ video {
 .bg-secondary\/10 {
   background-color: rgb(74 189 172 / 0.1);
 }
+.bg-navy\/10 {
+  background-color: rgb(13 27 42 / 0.1);
+}
 .bg-gradient-to-t {
   background-image: linear-gradient(to top, var(--tw-gradient-stops));
 }
@@ -1650,6 +1653,9 @@ video {
 .hover\:text-secondary-dark:hover {
   --tw-text-opacity: 1;
   color: rgb(42 157 143 / var(--tw-text-opacity, 1));
+}
+.hover\:text-navy\/60:hover {
+  color: rgb(13 27 42 / 0.6);
 }
 .hover\:shadow-lg:hover {
   --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);

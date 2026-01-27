@@ -28,6 +28,8 @@ function PageContent() {
 
   // Profile Edit States
   const [editName, setEditName] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -57,6 +59,13 @@ function PageContent() {
     if (mounted) localStorage.setItem('bento_history', JSON.stringify(history));
   }, [history, mounted]);
 
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
   if (!mounted) return null;
 
   const handleLogin = (email: string, pass: string) => {
@@ -65,6 +74,22 @@ function PageContent() {
       name: 'Bento Parent', email, tokens: 10, isLoggedIn: true, children: [], savedPlans: [],
     };
     setUser(mockUser);
+    setEditName('Bento Parent');
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('bento_user');
+    setPlan(null);
+    setView('home');
+    setToast({ message: "Logged out successfully", type: 'success' });
+  };
+
+  const handleUpdateProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setUser({ ...user, name: editName });
+    setToast({ message: "Profile updated!", type: 'success' });
   };
 
   const toggleSavePlan = (planId: string) => {
@@ -207,6 +232,67 @@ function PageContent() {
     </div>
   );
 
+  const renderProfile = () => (
+    <div className="max-w-6xl mx-auto px-4 space-y-12">
+      <div className="bg-white p-12 rounded-[3rem] border-4 border-navy/5 shadow-2xl text-left space-y-12">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b-4 border-bg-cool pb-12">
+          <div className="flex items-center gap-8">
+            <div className="w-24 h-24 bg-primary text-white rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/20 transition-transform hover:rotate-6"><UserIcon className="w-12 h-12" /></div>
+            <div>
+              <h2 className="text-4xl font-black text-navy tracking-tight">{user?.name}</h2>
+              <p className="text-navy/40 font-black uppercase tracking-widest text-[10px]">{user?.email}</p>
+            </div>
+          </div>
+          <div className="bg-navy px-8 py-6 rounded-3xl shadow-2xl shadow-navy/20 text-center md:text-right">
+             <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">Available Credits</p>
+             <p className="text-3xl font-black text-white">{user?.tokens} <span className="text-sm text-primary">Tokens</span></p>
+          </div>
+        </div>
+
+        <div className="space-y-12">
+          <ChildManager 
+            children={user?.children || []} 
+            onUpdate={(children) => setUser(prev => prev ? ({ ...prev, children }) : null)} 
+            onSelect={setSelectedChildId}
+            selectedChildId={selectedChildId}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pt-12 border-t-4 border-bg-cool">
+          <div className="space-y-10">
+            <h3 className="text-xl font-black text-navy tracking-tight flex items-center gap-3">
+              <div className="w-2 h-8 bg-primary rounded-full" />
+              Account Settings
+            </h3>
+            <form onSubmit={handleUpdateProfile} className="space-y-6">
+              <div>
+                <label className="text-[10px] font-black text-navy/40 tracking-widest uppercase block mb-3 ml-2">Display Name</label>
+                <input 
+                  type="text" 
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full p-5 bg-bg-cool border-2 border-transparent rounded-2xl focus:border-primary focus:bg-white focus:outline-none font-black text-navy"
+                />
+              </div>
+              <button type="submit" className="w-full bg-navy text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary transition-all shadow-xl">Update Settings</button>
+            </form>
+          </div>
+
+          <div className="space-y-10">
+            <h3 className="text-xl font-black text-navy tracking-tight flex items-center gap-3">
+              <div className="w-2 h-8 bg-secondary rounded-full" />
+              Security
+            </h3>
+            <div className="space-y-6">
+               <button onClick={handleLogout} className="w-full border-4 border-primary text-primary py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary hover:text-white transition-all">Sign Out of Account</button>
+               <p className="text-[10px] font-black text-navy/20 text-center uppercase tracking-widest">Signed in since {new Date().toLocaleDateString()}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex flex-col bg-bg-cool">
       {toast && (
@@ -221,12 +307,12 @@ function PageContent() {
         </div>
         <div className="flex items-center gap-4 md:gap-10">
           <div className="hidden md:flex items-center gap-10 font-black text-[10px] uppercase tracking-widest text-navy/40">
-            <button onClick={() => navigateTo('home')} className={view === 'home' ? 'text-primary' : ''}>Planner</button>
-            <button onClick={() => navigateTo('pricing')} className={view === 'pricing' ? 'text-primary' : ''}>Pricing</button>
-            {user && <button onClick={() => navigateTo('history')} className={view === 'history' ? 'text-primary' : ''}>History</button>}
+            <button onClick={() => navigateTo('home')} className={`hover:text-primary transition-colors ${view === 'home' ? 'text-primary' : ''}`}>Planner</button>
+            <button onClick={() => navigateTo('pricing')} className={`hover:text-primary transition-colors ${view === 'pricing' ? 'text-primary' : ''}`}>Pricing</button>
+            {user && <button onClick={() => navigateTo('history')} className={`hover:text-primary transition-colors ${view === 'history' ? 'text-primary' : ''}`}>History</button>}
           </div>
           {user && (
-            <div className="flex items-center gap-4 border-l-4 border-bg-cool pl-10">
+            <div className="flex items-center gap-3 md:gap-6 border-l-4 border-bg-cool pl-3 md:pl-10">
               <div onClick={() => navigateTo('pricing')} className="flex items-center gap-3 bg-navy text-white px-5 py-3 rounded-2xl shadow-xl hover:bg-primary transition-all cursor-pointer group">
                  <span className="text-xs font-black">{user.tokens}</span>
                  <div className="w-5 h-5 bg-white/20 rounded-lg flex items-center justify-center text-[10px] font-black group-hover:rotate-90 transition-transform">+</div>
@@ -239,6 +325,7 @@ function PageContent() {
       <main className="flex-1 pb-32 pt-12 md:pt-20">
         {view === 'home' && renderHome()}
         {view === 'history' && renderHistory()}
+        {view === 'profile' && renderProfile()}
         {view === 'pricing' && (
           <div className="max-w-6xl mx-auto px-4 space-y-20">
              <h2 className="text-6xl md:text-7xl font-black text-navy text-center tracking-tight leading-none">Fuel Your<br/>Planning</h2>

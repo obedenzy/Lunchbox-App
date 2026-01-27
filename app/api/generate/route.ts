@@ -54,6 +54,7 @@ export async function POST(req: Request) {
     const prompt = `Create a 7-day (Monday to Sunday) kid-friendly lunchbox plan for a ${profile.age} year old for the period: ${profile.targetWeek}.
     Restrictions: ${profile.allergies.join(', ') || 'None'}.
     Excluded Foods: ${profile.excludedIngredients?.join(', ') || 'None'}.
+    On-hand Ingredients: ${profile.availableIngredients?.join(', ') || 'None'}. (IMPORTANT: Prioritize using these ingredients in the recipes).
     Diet: ${profile.dietType}.
     Preferences: ${profile.preferences || 'None'}.
     

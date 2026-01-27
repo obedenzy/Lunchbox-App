@@ -18,6 +18,7 @@ export interface Child {
   age: number;
   allergies: string[];
   excludedIngredients: string[];
+  availableIngredients?: string[]; // New: Ingredients on hand
   dietType: DietType;
   preferences: string;
 }
@@ -50,7 +51,7 @@ export interface WeeklyPlan {
   id: string;
   timestamp: number;
   weekLabel: string;
-  childId?: string; // Associated child
+  childId?: string; 
   profile: UserProfile;
   Monday: LunchDay;
   Tuesday: LunchDay;
@@ -65,6 +66,7 @@ export interface UserProfile {
   age: number;
   allergies: string[];
   excludedIngredients?: string[];
+  availableIngredients?: string[]; // New: Ingredients on hand
   preferences: string;
   dietType: DietType;
   targetWeek: string;
@@ -77,7 +79,7 @@ export interface User {
   tokens: number;
   isLoggedIn: boolean;
   children: Child[];
-  savedPlans?: string[]; // IDs of plans saved to profile
+  savedPlans?: string[]; 
   defaultSettings?: {
     childAge: number;
     dietType: DietType;

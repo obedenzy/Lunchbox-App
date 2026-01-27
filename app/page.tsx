@@ -20,7 +20,13 @@ function PageContent() {
   const [plan, setPlan] = useState<WeeklyPlan | null>(null);
   const [history, setHistory] = useState<WeeklyPlan[]>([]);
   const [view, setView] = useState<View>('home');
+  
+  // History Filter States
   const [historyFilter, setHistoryFilter] = useState<'all' | 'saved' | 'not_saved'>('all');
+  const [monthFilter, setMonthFilter] = useState<string>('all');
+  const [dietFilter, setDietFilter] = useState<string>('all');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -153,8 +159,8 @@ function PageContent() {
         profile: profile,
         ...rawPlan
       };
-      setPlan(generatedPlan);
       setHistory(prev => [generatedPlan, ...prev]);
+      setPlan(generatedPlan);
       setUser(prev => prev ? ({ ...prev, tokens: prev.tokens - 1 }) : null);
       showToast("Magic plan generated!");
     } catch (err: any) { 
@@ -229,26 +235,101 @@ function PageContent() {
   );
 
   const renderHistory = () => {
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
     const filteredHistory = history.filter(h => {
-      if (historyFilter === 'all') return true;
-      const saved = isPlanSaved(h.id);
-      return historyFilter === 'saved' ? saved : !saved;
+      // 1. Save Filter
+      if (historyFilter !== 'all') {
+        const saved = isPlanSaved(h.id);
+        if (historyFilter === 'saved' && !saved) return false;
+        if (historyFilter === 'not_saved' && saved) return false;
+      }
+      
+      // 2. Month Filter
+      if (monthFilter !== 'all') {
+        const planMonth = new Date(h.timestamp).getMonth();
+        if (planMonth !== parseInt(monthFilter)) return false;
+      }
+
+      // 3. Dietary Filter
+      if (dietFilter !== 'all') {
+        if (h.profile.dietType !== dietFilter) return false;
+      }
+
+      return true;
+    }).sort((a, b) => {
+      // 4. Sort
+      return sortOrder === 'newest' ? b.timestamp - a.timestamp : a.timestamp - b.timestamp;
     });
 
     return (
       <div className="max-w-7xl mx-auto px-4 space-y-12 pb-20">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b-4 border-navy/5 pb-8">
-          <h2 className="text-5xl font-black text-navy tracking-tight">Your History</h2>
-          <div className="flex bg-white p-2 rounded-[1.5rem] border-2 border-navy/5 shadow-xl">
-            {(['all', 'saved', 'not_saved'] as const).map(f => (
-              <button 
-                key={f}
-                onClick={() => setHistoryFilter(f)}
-                className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${historyFilter === f ? 'bg-navy text-white shadow-xl' : 'text-navy/40 hover:text-navy'}`}
+        <div className="flex flex-col gap-8 border-b-4 border-navy/5 pb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <h2 className="text-5xl font-black text-navy tracking-tight">Your History</h2>
+            <div className="flex bg-white p-2 rounded-[1.5rem] border-2 border-navy/5 shadow-xl">
+              {(['all', 'saved', 'not_saved'] as const).map(f => (
+                <button 
+                  key={f}
+                  onClick={() => setHistoryFilter(f)}
+                  className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${historyFilter === f ? 'bg-navy text-white shadow-xl' : 'text-navy/40 hover:text-navy'}`}
+                >
+                  {f.replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-2xl border-2 border-navy/5 shadow-lg flex flex-col gap-2">
+              <label className="text-[10px] font-black text-navy/30 uppercase tracking-widest ml-1">Filter by Month</label>
+              <select 
+                value={monthFilter}
+                onChange={(e) => setMonthFilter(e.target.value)}
+                className="w-full bg-bg-cool p-3 rounded-xl font-black text-navy text-xs outline-none focus:border-primary border-2 border-transparent transition-all"
               >
-                {f.replace('_', ' ')}
-              </button>
-            ))}
+                <option value="all">All Months</option>
+                {months.map((m, i) => (
+                  <option key={m} value={i.toString()}>{m}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border-2 border-navy/5 shadow-lg flex flex-col gap-2">
+              <label className="text-[10px] font-black text-navy/30 uppercase tracking-widest ml-1">Dietary Rule</label>
+              <select 
+                value={dietFilter}
+                onChange={(e) => setDietFilter(e.target.value)}
+                className="w-full bg-bg-cool p-3 rounded-xl font-black text-navy text-xs outline-none focus:border-primary border-2 border-transparent transition-all"
+              >
+                <option value="all">All Diets</option>
+                <option value="Omnivore">Omnivore</option>
+                <option value="Vegetarian">Vegetarian</option>
+                <option value="Vegan">Vegan</option>
+              </select>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border-2 border-navy/5 shadow-lg flex flex-col gap-2">
+              <label className="text-[10px] font-black text-navy/30 uppercase tracking-widest ml-1">Sort Order</label>
+              <select 
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as any)}
+                className="w-full bg-bg-cool p-3 rounded-xl font-black text-navy text-xs outline-none focus:border-primary border-2 border-transparent transition-all"
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+              </select>
+            </div>
+
+            <div className="bg-primary/5 p-4 rounded-2xl border-2 border-primary/10 shadow-lg flex items-center justify-center">
+               <div className="text-center">
+                 <p className="text-[10px] font-black text-primary uppercase tracking-widest">Active Results</p>
+                 <p className="text-2xl font-black text-navy">{filteredHistory.length}</p>
+               </div>
+            </div>
           </div>
         </div>
         
@@ -277,6 +358,7 @@ function PageContent() {
                   <div className="flex flex-wrap gap-2">
                     <span className="px-3 py-1 bg-navy text-white rounded-lg text-[9px] font-black uppercase">{h.profile.age} Years</span>
                     <span className="px-3 py-1 bg-secondary text-white rounded-lg text-[9px] font-black uppercase">{h.profile.dietType}</span>
+                    <span className="px-3 py-1 bg-accent text-white rounded-lg text-[9px] font-black uppercase">{new Date(h.timestamp).toLocaleDateString()}</span>
                   </div>
                   <button 
                     onClick={() => { setPlan(h); navigateTo('home'); }}

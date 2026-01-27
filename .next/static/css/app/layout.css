@@ -624,6 +624,9 @@ video {
 .ml-4 {
   margin-left: 1rem;
 }
+.ml-1 {
+  margin-left: 0.25rem;
+}
 .line-clamp-2 {
   overflow: hidden;
   display: -webkit-box;
@@ -1012,6 +1015,9 @@ video {
   --tw-border-opacity: 1;
   border-color: rgb(254 226 226 / var(--tw-border-opacity, 1));
 }
+.border-primary\/10 {
+  border-color: rgb(252 74 26 / 0.1);
+}
 .border-t-primary {
   --tw-border-opacity: 1;
   border-top-color: rgb(252 74 26 / var(--tw-border-opacity, 1));
@@ -1075,6 +1081,9 @@ video {
 .bg-red-600 {
   --tw-bg-opacity: 1;
   background-color: rgb(220 38 38 / var(--tw-bg-opacity, 1));
+}
+.bg-primary\/5 {
+  background-color: rgb(252 74 26 / 0.05);
 }
 .bg-gradient-to-t {
   background-image: linear-gradient(to top, var(--tw-gradient-stops));

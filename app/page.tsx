@@ -613,6 +613,87 @@ function PageContent() {
     </div>
   );
 
+  const renderFAQ = () => (
+    <div className="max-w-4xl mx-auto px-6 py-12 text-left space-y-12">
+      <h2 className="text-6xl font-black text-navy tracking-tight">FAQ</h2>
+      <div className="space-y-8">
+        {[
+          { q: "How does BentoMagic work?", a: "We use advanced AI to generate customized meal plans based on your child's age, allergies, and preferences. Each plan includes recipes, nutritional data, and AI-generated visuals." },
+          { q: "What are generation credits?", a: "Each credit (token) allows you to generate one full 7-day weekly plan. You get free tokens upon signup and can purchase more in our shop." },
+          { q: "Can I save my favorite plans?", a: "Yes! Once a plan is generated, click 'Save to Profile'. It will be stored in your history forever for easy access." },
+          { q: "Are the recipes healthy?", a: "Absolutely. Our AI is instructed to prioritize whole foods, balanced macros, and kid-friendly portions while respecting your dietary choices." }
+        ].map((item, i) => (
+          <div key={i} className="bg-white p-8 rounded-[2rem] border-4 border-navy/5 shadow-xl">
+            <h4 className="text-xl font-black text-navy mb-4">Q: {item.q}</h4>
+            <p className="text-navy/60 font-bold leading-relaxed">{item.a}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderAbout = () => (
+    <div className="max-w-4xl mx-auto px-6 py-12 text-left space-y-12">
+      <h2 className="text-6xl font-black text-navy tracking-tight">About Magic</h2>
+      <div className="bg-white p-12 rounded-[3rem] border-4 border-navy/5 shadow-2xl space-y-8">
+        <p className="text-2xl font-black text-primary leading-tight">We believe family mealtime should be a source of joy, not stress.</p>
+        <p className="text-navy/60 font-bold leading-relaxed text-lg">BentoMagic combines culinary expertise with cutting-edge artificial intelligence to handle your planning, so you can handle the parenting.</p>
+        <div className="grid grid-cols-2 gap-8 pt-8">
+          <div className="bg-bg-cool p-8 rounded-2xl">
+             <p className="text-4xl mb-4">🥗</p>
+             <h5 className="font-black text-navy mb-2 uppercase text-xs tracking-widest">Vision</h5>
+             <p className="text-navy/40 text-[10px] font-black leading-relaxed">To become the global standard for smart, healthy family meal planning.</p>
+          </div>
+          <div className="bg-bg-cool p-8 rounded-2xl">
+             <p className="text-4xl mb-4">🚀</p>
+             <h5 className="font-black text-navy mb-2 uppercase text-xs tracking-widest">Mission</h5>
+             <p className="text-navy/40 text-[10px] font-black leading-relaxed">Providing parents with the tools they need to fuel the next generation.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPrivacy = () => (
+    <div className="max-w-4xl mx-auto px-6 py-12 text-left space-y-12">
+      <h2 className="text-6xl font-black text-navy tracking-tight">Privacy</h2>
+      <div className="bg-white p-12 rounded-[3rem] border-4 border-navy/5 shadow-2xl space-y-12">
+        <section className="space-y-4">
+          <h4 className="text-xl font-black text-navy uppercase tracking-widest">1. Data Collection</h4>
+          <p className="text-navy/60 font-bold leading-relaxed">We collect minimal data: email for account access, and planning preferences forSuggestions. We never sell your data.</p>
+        </section>
+        <section className="space-y-4">
+          <h4 className="text-xl font-black text-navy uppercase tracking-widest">2. Payments</h4>
+          <p className="text-navy/60 font-bold leading-relaxed">Payments are handled securely via Stripe. BentoMagic does not store your credit card information.</p>
+        </section>
+      </div>
+    </div>
+  );
+
+  const renderStatus = () => (
+    <div className="max-w-4xl mx-auto px-6 py-12 text-left space-y-12">
+      <h2 className="text-6xl font-black text-navy tracking-tight">Status</h2>
+      <div className="bg-white p-12 rounded-[3rem] border-4 border-navy/5 shadow-2xl space-y-8">
+        <div className="flex items-center gap-6 p-8 bg-accent/10 border-2 border-accent/20 rounded-3xl">
+           <div className="w-4 h-4 bg-accent rounded-full animate-pulse" />
+           <p className="text-xl font-black text-navy">All Systems Operational</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderAPI = () => (
+    <div className="max-w-4xl mx-auto px-6 py-12 text-left space-y-12">
+      <h2 className="text-6xl font-black text-navy tracking-tight">API</h2>
+      <div className="bg-white p-12 rounded-[3rem] border-4 border-navy/5 shadow-2xl space-y-8">
+        <p className="text-xl font-black text-navy">The BentoMagic Public API is currently in closed beta.</p>
+        <div className="bg-navy p-8 rounded-3xl">
+           <code className="text-primary font-black text-xs">GET /v1/magic/generate</code>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex flex-col bg-bg-cool">
       {toast && (
@@ -653,6 +734,11 @@ function PageContent() {
         {view === 'history' && renderHistory()}
         {view === 'profile' && renderProfile()}
         {view === 'pricing' && renderPricing()}
+        {view === 'faq' && renderFAQ()}
+        {view === 'about' && renderAbout()}
+        {view === 'privacy' && renderPrivacy()}
+        {view === 'status' && renderStatus()}
+        {view === 'api' && renderAPI()}
         {view === 'payment' && selectedPack && (
           <div className="max-w-4xl mx-auto px-4">
              <div className="text-center mb-12 space-y-4">
@@ -674,6 +760,29 @@ function PageContent() {
             <div className="flex items-center gap-4"><div className="p-3 bg-primary text-white rounded-xl shadow-2xl shadow-primary/20"><AppleIcon /></div><span className="text-2xl font-black text-white tracking-tighter">BentoMagic</span></div>
             <p className="text-white/30 font-bold leading-relaxed text-sm uppercase tracking-widest">Designing the future of family mealtime through intelligence.</p>
           </div>
+          <div className="space-y-10">
+            <h4 className="font-black text-white/20 tracking-[0.3em] text-[10px] uppercase">Product</h4>
+            <ul className="space-y-6 text-xs font-black tracking-widest uppercase text-white/60">
+              <li><button onClick={() => navigateTo('home')} className="hover:text-primary transition-colors">Generator</button></li>
+              <li><button onClick={() => navigateTo('pricing')} className="hover:text-primary transition-colors">Pricing</button></li>
+              {user && <li><button onClick={() => navigateTo('history')} className="hover:text-primary transition-colors">History</button></li>}
+            </ul>
+          </div>
+          <div className="space-y-10">
+            <h4 className="font-black text-white/20 tracking-[0.3em] text-[10px] uppercase">Company</h4>
+            <ul className="space-y-6 text-xs font-black tracking-widest uppercase text-white/60">
+              <li><button onClick={() => navigateTo('about')} className="hover:text-primary transition-colors">About Magic</button></li>
+              <li><button onClick={() => navigateTo('faq')} className="hover:text-primary transition-colors">FAQ</button></li>
+              <li><button onClick={() => navigateTo('privacy')} className="hover:text-primary transition-colors">Privacy</button></li>
+            </ul>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-10 border-t border-white/5 mt-32 pt-12 flex flex-col md:flex-row justify-between items-center gap-8">
+           <p className="text-white/10 text-[10px] font-black tracking-[0.3em] uppercase">© {new Date().getFullYear()} BentoMagic Intelligence Studio</p>
+           <div className="flex gap-10 text-[10px] font-black tracking-[0.3em] uppercase text-white/10">
+              <button onClick={() => navigateTo('status')} className="hover:text-white transition-colors">Status</button>
+              <button onClick={() => navigateTo('api')} className="hover:text-white transition-colors">API</button>
+           </div>
         </div>
       </footer>
     </div>

@@ -630,6 +630,9 @@ video {
 .ml-1 {
   margin-left: 0.25rem;
 }
+.mt-32 {
+  margin-top: 8rem;
+}
 .line-clamp-2 {
   overflow: hidden;
   display: -webkit-box;
@@ -1030,6 +1033,9 @@ video {
 .border-white\/20 {
   border-color: rgb(255 255 255 / 0.2);
 }
+.border-accent\/20 {
+  border-color: rgb(167 201 87 / 0.2);
+}
 .border-t-primary {
   --tw-border-opacity: 1;
   border-top-color: rgb(252 74 26 / var(--tw-border-opacity, 1));
@@ -1096,6 +1102,9 @@ video {
 }
 .bg-primary\/5 {
   background-color: rgb(252 74 26 / 0.05);
+}
+.bg-accent\/10 {
+  background-color: rgb(167 201 87 / 0.1);
 }
 .bg-gradient-to-t {
   background-image: linear-gradient(to top, var(--tw-gradient-stops));
@@ -1202,6 +1211,10 @@ video {
 .py-6 {
   padding-top: 1.5rem;
   padding-bottom: 1.5rem;
+}
+.py-12 {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
 }
 .pb-12 {
   padding-bottom: 3rem;
@@ -1402,6 +1415,15 @@ video {
 }
 .text-red-600\/60 {
   color: rgb(220 38 38 / 0.6);
+}
+.text-white\/10 {
+  color: rgb(255 255 255 / 0.1);
+}
+.text-white\/20 {
+  color: rgb(255 255 255 / 0.2);
+}
+.text-white\/60 {
+  color: rgb(255 255 255 / 0.6);
 }
 .underline {
   text-decoration-line: underline;

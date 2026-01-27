@@ -53,6 +53,11 @@ function PageContent() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Define showToast early to avoid initialization errors
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+  };
+
   useEffect(() => {
     setMounted(true);
     const savedHistory = localStorage.getItem('bento_history');
@@ -95,10 +100,6 @@ function PageContent() {
   }, [toast]);
 
   if (!mounted) return null;
-
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-    setToast({ message, type });
-  };
 
   const handleLogin = (email: string, pass: string) => {
     const mockUser: User = {

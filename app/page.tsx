@@ -420,6 +420,15 @@ function PageContent() {
 
   const renderProfile = () => (
     <div className="max-w-6xl mx-auto px-4 space-y-12">
+      <div id="children-list" className="w-full">
+        <ChildManager 
+          children={user?.children || []} 
+          onUpdate={(children) => setUser(prev => prev ? ({ ...prev, children }) : null)} 
+          onSelect={setSelectedChildId}
+          selectedChildId={selectedChildId}
+        />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Sidebar */}
         <div className="lg:col-span-4 space-y-8">
@@ -464,15 +473,6 @@ function PageContent() {
 
         {/* Main Content */}
         <div className="lg:col-span-8 space-y-8">
-          <div id="children-list">
-            <ChildManager 
-              children={user?.children || []} 
-              onUpdate={(children) => setUser(prev => prev ? ({ ...prev, children }) : null)} 
-              onSelect={setSelectedChildId}
-              selectedChildId={selectedChildId}
-            />
-          </div>
-
           <div className="bg-white p-12 rounded-[3rem] border-4 border-navy/5 shadow-2xl text-left space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               <div className="space-y-10">

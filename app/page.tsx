@@ -192,6 +192,16 @@ function PageContent() {
     }
   };
 
+  const handleBuyCredits = (pack: TokenPack) => {
+    if (!user) {
+      showToast("Please sign in to purchase credits", "error");
+      navigateTo('home');
+      return;
+    }
+    setSelectedPack(pack);
+    navigateTo('payment');
+  };
+
   const navigateTo = (v: View) => { setView(v); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
   const renderHome = () => (
@@ -568,10 +578,10 @@ function PageContent() {
             </div>
             <div className="text-5xl font-black text-primary tracking-tight">{pack.price}</div>
             <button 
-              onClick={() => { setSelectedPack(pack); navigateTo('payment'); }}
+              onClick={() => handleBuyCredits(pack)}
               className="w-full bg-navy text-white py-6 rounded-2xl font-black uppercase tracking-widest hover:bg-primary transition-all shadow-xl group-hover:translate-y-[-4px]"
             >
-              Get Credits
+              {user ? 'Get Credits' : 'Sign in to Buy'}
             </button>
           </div>
         ))}

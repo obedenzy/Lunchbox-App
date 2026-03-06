@@ -1,69 +1,48 @@
--- Create a table for user profiles
-create table public.profiles (
-  id uuid references auth.users on delete cascade not null primary key,
-  name text,
-  email text,
-  tokens integer default 10,
-  saved_plans uuid[] default '{}',
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- Table for user profiles with OTP support
+CREATE TABLE public.profiles (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT,
+  tokens INTEGER DEFAULT 10,
+  otp TEXT, -- Stores the 6-digit code
+  otp_expiry TIMESTAMP WITH TIME ZONE,
+  saved_plans UUID[] DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Set up Row Level Security (RLS) for profiles
-alter table public.profiles enable row level security;
+-- Index for fast email searches
+CREATE INDEX idx_profiles_email ON public.profiles(email);
 
-create policy "Users can view own profile" on public.profiles
-  for select using (auth.uid() = id);
-
-create policy "Users can update own profile" on public.profiles
-  for update using (auth.uid() = id);
-
--- Create a table for children
-create table public.children (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references public.profiles(id) on delete cascade not null,
-  name text not null,
-  age integer not null,
-  allergies text[] default '{}',
-  excluded_ingredients text[] default '{}',
-  available_ingredients text[] default '{}',
-  diet_type text check (diet_type in ('Omnivore', 'Vegetarian', 'Vegan')),
-  preferences text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- Table for children profiles
+CREATE TABLE public.children (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  age INTEGER NOT NULL,
+  allergies TEXT[] DEFAULT '{}',
+  excluded_ingredients TEXT[] DEFAULT '{}',
+  available_ingredients TEXT[] DEFAULT '{}',
+  diet_type TEXT CHECK (diet_type IN ('Omnivore', 'Vegetarian', 'Vegan')),
+  preferences TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Set up RLS for children
-alter table public.children enable row level security;
+-- Index for finding children by parent
+CREATE INDEX idx_children_user_id ON public.children(user_id);
 
-create policy "Users can manage own children" on public.children
-  for all using (auth.uid() = user_id);
-
--- Create a table for weekly plans
-create table public.weekly_plans (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references public.profiles(id) on delete cascade not null,
-  child_id uuid references public.children(id) on delete set null,
-  week_label text not null,
-  timestamp bigint not null,
-  plan_data jsonb not null, -- Stores Monday-Sunday meal details
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- Table for generated weekly plans
+CREATE TABLE public.weekly_plans (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  child_id UUID REFERENCES public.children(id) ON DELETE SET NULL,
+  week_label TEXT NOT NULL,
+  timestamp BIGINT NOT NULL, -- JS Date.now() compatible
+  plan_data JSONB NOT NULL, -- Stores the full Monday-Sunday JSON object
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Set up RLS for weekly plans
-alter table public.weekly_plans enable row level security;
+-- Index for finding plans by user
+CREATE INDEX idx_weekly_plans_user_id ON public.weekly_plans(user_id);
 
-create policy "Users can manage own plans" on public.weekly_plans
-  for all using (auth.uid() = user_id);
-
--- Trigger to automatically create a profile after signup
-create function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, email, name)
-  values (new.id, new.email, new.raw_user_meta_data->>'name');
-  return new;
-end;
-$$ language plpgsql security definer;
-
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+-- Note: Row Level Security (RLS) is NOT enabled per request, 
+-- allowing open access to these tables.

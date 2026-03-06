@@ -35,15 +35,18 @@ function PageContent() {
   const [history, setHistory] = useState<WeeklyPlan[]>([]);
   const [view, setView] = useState<View>('home');
   
+  // Auth state
+  const [tempAuthData, setTempAuthData] = useState<{ email: string; name?: string; otp: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
   // History Filter States
   const [historyFilter, setHistoryFilter] = useState<'all' | 'saved' | 'not_saved'>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all');
   const [dietFilter, setDietFilter] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedChildId, setSelectedChildId] = useState<string>('');
   const [selectedPack, setSelectedPack] = useState<TokenPack | null>(null);
   
@@ -101,15 +104,55 @@ function PageContent() {
 
   if (!mounted) return null;
 
-  const handleLogin = (email: string, pass: string) => {
-    const mockUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: 'Bento Parent', email, tokens: 10, isLoggedIn: true, children: [], savedPlans: [],
-    };
-    setUser(mockUser);
-    setProfileName(mockUser.name);
-    setProfileEmail(mockUser.email);
-    showToast("Welcome to BentoMagic!");
+  const handleSendOTP = async (email: string, name?: string, mode: 'login' | 'signup' = 'login'): Promise<boolean> => {
+    setLoading(true);
+    // Simulate API delay
+    await new Promise(r => setTimeout(r, 1000));
+
+    // Verify if email exists for login
+    if (mode === 'login') {
+      const savedUser = localStorage.getItem('bento_user');
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        if (parsed.email !== email) {
+          showToast("Email not found. Please sign up instead.", "error");
+          setLoading(false);
+          return false;
+        }
+      } else {
+        showToast("No account found with this email.", "error");
+        setLoading(false);
+        return false;
+      }
+    }
+
+    const mockOTP = "123456"; // In real app, this is sent via email
+    console.log(`[AUTH] OTP for ${email}: ${mockOTP}`);
+    setTempAuthData({ email, name, otp: mockOTP });
+    showToast(`Code sent to ${email} (Mock: 123456)`);
+    setLoading(false);
+    return true;
+  };
+
+  const handleVerifyOTP = (otp: string) => {
+    if (tempAuthData && otp === tempAuthData.otp) {
+      const newUser: User = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: tempAuthData.name || 'Bento Parent',
+        email: tempAuthData.email,
+        tokens: 10,
+        isLoggedIn: true,
+        children: [],
+        savedPlans: [],
+      };
+      setUser(newUser);
+      setProfileName(newUser.name);
+      setProfileEmail(newUser.email);
+      setTempAuthData(null);
+      showToast("Magic Access Granted!");
+    } else {
+      showToast("Invalid verification code.", "error");
+    }
   };
 
   const handleLogout = () => {
@@ -212,7 +255,9 @@ function PageContent() {
       </header>
       
       {!user ? (
-        <section className="max-w-4xl mx-auto"><AuthForm onLogin={handleLogin} onSignup={() => {}} /></section>
+        <section className="max-w-4xl mx-auto">
+          <AuthForm onSendOTP={handleSendOTP} onVerifyOTP={handleVerifyOTP} isLoading={loading} />
+        </section>
       ) : (
         <div className="space-y-12 md:space-y-24 max-w-6xl mx-auto">
           <ChildManager 
